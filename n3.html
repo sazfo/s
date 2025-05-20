@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ada’a Program Assignment</title>
+  <style>
+    /* التنسيقات كما هي */
+    @page { size: A4; margin: 10mm; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10mm;
+      width: 190mm;
+      height: 280mm;
+      margin: auto;
+      background: white;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .date { float: left; margin-bottom: 20px; }
+    .date input {
+      border: none;
+      border-bottom: 1.5px solid #000;
+      width: 150px;
+      font-size: 16px;
+      padding: 4px 2px;
+      outline: none;
+    }
+    .logo { text-align: right; margin-bottom: 20px; }
+    h2 { text-align: center; text-decoration: underline; margin-top: 40px; font-size: 26px; }
+    .description, .note { margin-top: 30px; font-size: 16px; }
+    .note { font-style: italic; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      font-size: 16px;
+    }
+    table.signature-table { margin-top: 0; }
+    th, td { border: 1px solid #000; padding: 12px; vertical-align: top; }
+    .input-field { width: 100%; height: 32px; font-size: 16px; box-sizing: border-box; }
+    .signature-large { height: 130px; }
+    .approved-box {
+      border: 1px solid #000;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+      margin: 0;
+    }
+    .signature-input {
+      width: 110px;
+      height: 32px;
+      border: 1.5px solid #000;
+      font-size: 16px;
+      margin-top: 5px;
+    }
+    .clearfix::after { content: ""; clear: both; display: table; }
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 10px 30px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 6px;
+      margin: 30px auto;
+      display: block;
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+
+<div id="pdf-content">
+  <div class="clearfix">
+    <div class="date">Date: <input type="text" id="date" placeholder="DD / MM / YYYY" /></div>
+    <div class="logo"><img src="images/k.jpg" width="200" height="120" alt="Logo" /></div>
+  </div>
+
+  <h2>Ada’a Program Assignment</h2>
+
+  <div class="description">
+    Based on the recommendations provided by the Head of Department and the Director of the Performance Improvement Department (Ada’a PIO Hospital Lead), you have been assigned to your respective area as outlined in the table below within the Ada’a program at King Saud Hospital in Unaizah.
+  </div>
+
+  <table>
+    <tr><th>Domain</th><td><input type="text" id="domain" class="input-field" /></td></tr>
+    <tr>
+      <th>PROPOSED ROLE</th>
+      <td>
+        <label><input type="radio" name="role" value="Domain Leader" /> Domain Leader</label><br />
+        <label><input type="radio" name="role" value="Change Agent" /> Change Agent</label><br />
+        <label><input type="radio" name="role" value="Data Collector" /> Data Collector</label>
+      </td>
+    </tr>
+    <tr><th>Name of the Assignee</th><td><input type="text" id="assignee_name" class="input-field" /></td></tr>
+    <tr><th>Contact Number</th><td><input type="text" id="contact_number" class="input-field" /></td></tr>
+    <tr><th>E-mail Address</th><td><input type="email" id="email_address" class="input-field" /></td></tr>
+  </table>
+
+  <table class="signature-table">
+    <tr><th>Reviewed by:</th><th>Reviewed by:</th></tr>
+    <tr><td class="signature-large">Domain Leader</td><td class="signature-large">PIO Hospital Lead</td></tr>
+  </table>
+
+  <div class="approved-box">Approved by:</div>
+
+  <table>
+    <tr>
+      <td style="padding: 20px; text-align: center;">
+        MR : IBRAHIMALI AL WEHAIBI<br />
+        HOSPITAL DIRECTOR<br />
+        King Saud Hospital – Unaizah<br /><br />
+        <strong>Electronic Signature</strong><br />
+        <input type="text" id="director_signature" class="signature-input" />
+      </td>
+    </tr>
+  </table>
+
+  <div class="note">
+    *Please note it is essential to inform the Performance Improvement Department of any changes in the role at least two months prior.
+  </div>
+</div>
+
+<button id="sendBtn" onclick="sendTextEmail()">إرسال النموذج</button>
+
+<script>
+  emailjs.init("Lxr6aAaUDjf5r5Rvk");
+
+  function sendTextEmail() {
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
+
+    // تأكد اختيار الدور
+    const roles = document.getElementsByName('role');
+    let selectedRole = '';
+    for (let i = 0; i < roles.length; i++) {
+      if (roles[i].checked) {
+        selectedRole = roles[i].value;
+        break;
+      }
+    }
+
+    // اجلب القيم
+    const assigneeName = document.getElementById('assignee_name').value.trim() || "No Name";
+    const domain = document.getElementById('domain').value.trim() || "";
+    const contactNumber = document.getElementById('contact_number').value.trim() || "";
+    const emailAddress = document.getElementById('email_address').value.trim();
+    const directorSignature = document.getElementById('director_signature').value.trim() || "";
+    const date = document.getElementById('date').value.trim() || "";
+
+    // تحقق من صحة البيانات الأساسية
+    if (!selectedRole) {
+      alert("من فضلك اختر الدور المقترح.");
+      sendBtn.disabled = false;
+      return;
+    }
+    if (!emailAddress) {
+      alert("من فضلك أدخل البريد الإلكتروني.");
+      sendBtn.disabled = false;
+      return;
+    }
+    // يمكن إضافة تحقق لباقي الحقول حسب الحاجة
+
+    // صياغة الرسالة بشكل منسق
+    const message = `
+نموذج Ada’a Program Assignment:
+
+التاريخ: ${date}
+المجال: ${domain}
+الدور المقترح: ${selectedRole}
+اسم المكلف: ${assigneeName}
+رقم الاتصال: ${contactNumber}
+البريد الإلكتروني: ${emailAddress}
+توقيع المدير: ${directorSignature}
+    `;
+
+    const templateParams = {
+      to_email: "sazfohaid2023@gmail.com",
+      from_name: assigneeName,
+      message: message
+    };
+
+    emailjs.send("service_42kjtml", "template_szobpzk", templateParams)
+      .then(function () {
+        alert("تم إرسال الإيميل بنجاح!");
+        sendBtn.disabled = false;
+      }, function (error) {
+        alert("حدث خطأ أثناء الإرسال: " + error.text);
+        sendBtn.disabled = false;
+      });
+  }
+</script>
+
+</body>
+</html>
