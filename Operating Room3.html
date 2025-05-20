@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI Charts</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* نفس ستايلك بالضبط */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 20px; 
+            padding: 20px;
+        }
+        .kpi-row {
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .chart-wrapper { width: 100%; height: 300px; }
+        canvas { width: 100% !important; height: 100% !important; }
+        .chart-buttons { margin-top: 10px; }
+        .chart-buttons input[type="color"] {
+            padding: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .chart-buttons select, .chart-buttons button {
+            padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+     
+    <div class="button-container">
+        <select id="yearSelect">
+            <option value="">Year</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+        </select>
+    </div>
+    
+    <div id="chartsContainer" class="charts-container"></div>
+
+    <!-- كل السكربتات داخل module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+       const firebaseConfig = {
+     apiKey: "AIzaSyC-bVwcjXMkLqlFMXarbOzJFnqctv25lXs",
+    authDomain: "mona-5ffe3.firebaseapp.com",
+    projectId: "mona-5ffe3",
+    storageBucket: "mona-5ffe3.firebasestorage.app",
+    messagingSenderId: "68575673397",
+    appId: "1:68575673397:web:b37e82c194927d9808c57c"
+  };
+      
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let charts = []; 
+
+        document.addEventListener("DOMContentLoaded", function () {
+            let selectedYear = localStorage.getItem('selectedYear') || '2023';
+            document.getElementById('yearSelect').value = selectedYear;
+            loadCharts(selectedYear);
+
+            document.getElementById('yearSelect').addEventListener('change', function() {
+                selectedYear = this.value;
+                localStorage.setItem('selectedYear', selectedYear);
+                loadCharts(selectedYear);
+            });
+        });
+
+      async function loadCharts(year) {
+    try {
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const kpis = [
+           "KPI 1: % Elective OR Utilization",
+            "KPI 2: % Surgical Cancellation Rate",
+            "KPI 3: % of Elective Surgeries",
+            "KPI 4: Day of Adm to Surg in Days",
+            "KPI 5: % Total Day Surgery",
+            "KPI 6: % Unplanned admission following discharge",
+            "KPI 7: Day Surgery Cancellation Rate",
+            "KPI 8: Day Surgery Conversion to Admission"
+        ];
+
+        const chartsContainer = document.getElementById('chartsContainer');
+        chartsContainer.innerHTML = '';
+
+        const monthlySnapshots = await Promise.all(
+            months.map(month => get(ref(db, `kpiData/${year}_${month}`)))
+        );
+
+        let data = {};
+        months.forEach((month, i) => {
+            if (monthlySnapshots[i].exists()) {
+                data[month] = monthlySnapshots[i].val();
+            } else {
+                data[month] = {};
+            }
+        });
+
+        kpis.forEach((kpi, index) => {
+            let chartContainer = document.createElement('div');
+            chartContainer.classList.add('kpi-row');
+
+            let title = document.createElement('h3');
+            title.textContent = kpi;
+            chartContainer.appendChild(title);
+
+            let chartCanvas = document.createElement('canvas');
+            chartContainer.appendChild(chartCanvas);
+
+            let dataValues = months.map(month => {
+                let val = data[month]?.[kpi]?.average;
+                return val ? parseFloat(val) : 0;
+            });
+
+            let chart = new Chart(chartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: kpi,
+                        data: dataValues,
+                        backgroundColor: '#007bff',
+                        borderColor: '#007bff',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => value + '%'
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.push(chart);
+
+            let buttonContainer = document.createElement('div');
+            buttonContainer.classList.add('chart-buttons');
+
+            let colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.addEventListener('input', () => {
+                changeChartColor(index, colorInput.value);
+            });
+            buttonContainer.appendChild(colorInput);
+
+            let typeSelect = document.createElement('select');
+            typeSelect.innerHTML = `
+                <option value="bar">Bar</option>
+                <option value="line">Line</option>
+                <option value="pie">Pie</option>
+            `;
+            typeSelect.addEventListener('change', () => {
+                chart.config.type = typeSelect.value;
+                chart.update();
+            });
+            buttonContainer.appendChild(typeSelect);
+
+            chartContainer.appendChild(buttonContainer);
+            chartsContainer.appendChild(chartContainer);
+        });
+
+    } catch (error) {
+        console.error('Error loading charts:', error);
+    }
+}
+
+        function changeChartColor(index, color) {
+            if (charts[index]) {
+                charts[index].data.datasets[0].backgroundColor = color;
+                charts[index].data.datasets[0].borderColor = color;
+                charts[index].update(); 
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .charts-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 20px;
+  }
+  .kpi-row {
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  canvas { width: 100% !important; height: 300px !important; }
+</style>
+</head>
+<body>
+<div class="button-container">
+  <select id="yearSelect">
+    <option value="">Year</option>
+    <option value="2023">2023</option>
+    <option value="2024">2024</option>
+    <option value="2025">2025</option>
+    <option value="2026">2026</option>
+    <option value="2027">2027</option>
+    <option value="2028">2028</option>
+  </select>
+  <button class="download-pdf-btn" onclick="downloadPageAsPDF()">تحميل PDF</button>
+</div>
+<div id="chartsContainer" class="charts-container"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+ const firebaseConfig = {
+     apiKey: "AIzaSyC-bVwcjXMkLqlFMXarbOzJFnqctv25lXs",
+    authDomain: "mona-5ffe3.firebaseapp.com",
+    projectId: "mona-5ffe3",
+    storageBucket: "mona-5ffe3.firebasestorage.app",
+    messagingSenderId: "68575673397",
+    appId: "1:68575673397:web:b37e82c194927d9808c57c"
+  };
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let charts = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+  let selectedYear = localStorage.getItem('selectedYear') || '2023';
+  document.getElementById('yearSelect').value = selectedYear;
+  loadCharts(selectedYear);
+
+  document.getElementById('yearSelect').addEventListener('change', (e) => {
+    selectedYear = e.target.value;
+    localStorage.setItem('selectedYear', selectedYear);
+    loadCharts(selectedYear);
+  });
+});
+
+async function loadCharts(year) {
+  try {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const kpis = [
+        "KPI 1: % Elective OR Utilization",
+            "KPI 2: % Surgical Cancellation Rate",
+            "KPI 3: % of Elective Surgeries",
+            "KPI 4: Day of Adm to Surg in Days",
+            "KPI 5: % Total Day Surgery",
+            "KPI 6: % Unplanned admission following discharge",
+            "KPI 7: Day Surgery Cancellation Rate",
+            "KPI 8: Day Surgery Conversion to Admission"
+        ];
+
+    const chartsContainer = document.getElementById('chartsContainer');
+    chartsContainer.innerHTML = '';
+    charts = [];
+
+    const monthlySnapshots = await Promise.all(
+      months.map(month => get(ref(db, `kpiData/${year}_${month}`)))
+    );
+
+    let data = {};
+    months.forEach((month, i) => {
+      data[month] = monthlySnapshots[i].exists() ? monthlySnapshots[i].val() : {};
+    });
+
+    kpis.forEach((kpi, index) => {
+      const chartContainer = document.createElement('div');
+      chartContainer.classList.add('kpi-row');
+
+      const title = document.createElement('h3');
+      title.textContent = kpi;
+      chartContainer.appendChild(title);
+
+      const chartCanvas = document.createElement('canvas');
+      chartContainer.appendChild(chartCanvas);
+
+      const dataValues = months.map(month => {
+        let val = data[month]?.[kpi]?.average;
+        return val ? parseFloat(val) : 0;
+      });
+
+      const chart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [{
+            label: kpi,
+            data: dataValues,
+            backgroundColor: '#007bff',
+            borderColor: '#007bff',
+            borderRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { callback: value => value + '%' }
+            }
+          }
+        }
+      });
+
+      charts.push(chart);
+      chartsContainer.appendChild(chartContainer);
+    });
+  } catch (error) {
+    console.error('Error loading charts:', error);
+  }
+}
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+<script>
+function downloadPageAsPDF() {
+  const container = document.getElementById('chartsContainer');
+  const selectedYear = document.getElementById('yearSelect').value;
+
+  if (!container || !selectedYear) {
+    alert("يرجى اختيار السنة أولاً.");
+    return;
+  }
+
+  const containerClone = container.cloneNode(true);
+  const canvases = container.querySelectorAll('canvas');
+  const cloneCanvases = containerClone.querySelectorAll('canvas');
+
+  canvases.forEach((canvas, i) => {
+    const imgData = canvas.toDataURL();
+    const img = document.createElement('img');
+    img.src = imgData;
+    img.style.width = '100%';
+    img.style.height = 'auto';
+    cloneCanvases[i].replaceWith(img);
+  });
+
+  const titleDiv = document.createElement('div');
+  titleDiv.innerHTML = `<h2 style="text-align: center;">Operating Room- ${selectedYear}</h2>`;
+
+  const printable = document.createElement('div');
+  printable.appendChild(titleDiv);
+  printable.appendChild(containerClone);
+
+  const opt = {
+    margin: 0.5,
+    filename: `Operating Room${selectedYear}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+  };
+
+  html2pdf().set(opt).from(printable).save();
+}
+</script>
+</body>
+</html>

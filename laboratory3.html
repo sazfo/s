@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+   <style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        display: flex;
+        flex-direction: column;
+        padding-top: 100px;
+    }
+    .hidden {
+  display: none;
+}
+
+    .action-buttons {
+        width: 90%;
+        margin: 20px auto;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .action-buttons button {
+    padding: 10px 18px;
+    font-size: 16px;
+    color: #4fa3c6;
+    background-color: white;
+    border: 1px solid #4fa3c6;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.action-buttons button:hover {
+    background-color: #4fa3c6;
+    color: white;
+}
+
+
+    .narrow-sidebar {
+      box-shadow: 0 15px 15px rgba(0, 0, 0, 0.2);
+        width: 60px;
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        background-color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 0;
+        border: 1px solid black;
+        border-radius: 20px;
+        z-index: 1000;
+    }
+
+    .narrow-sidebar .icon {
+        font-size: 40px;
+        margin: 20px 0;
+        color: #4fa3c6;
+        transition: color 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .narrow-sidebar .icon:hover {
+        color: rgb(78, 137, 186);
+    }
+
+    .navbar {
+      box-shadow: 0 15px 15px rgba(0, 0, 0, 0.2);
+        background-color: white;
+        padding: 15px;
+        color: #4fa3c6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: fixed;
+        top: 10px;
+        left: 130px;
+        right: 10px;
+        z-index: 1001;
+        border: 1px solid black;
+        border-radius: 20px;
+    }
+
+    .navbar h2 {
+        margin: 0;
+        text-align: center;
+        flex-grow: 1;
+        font-size: 40px;
+    }
+
+    .button-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .navbar select {
+        background-color: white;
+        color: #4fa3c6;
+        border: none;
+        padding: 8px 12px;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    .navbar select:hover {
+        background-color: #dde5ee;
+    }
+
+    table {
+        width: 90%;
+        margin: 40px auto;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        font-size: 14px;
+        border-radius: 35px;
+        table-layout: fixed;
+        overflow: hidden;
+    }
+
+    th, td {
+        padding: 10px 10px;
+        border: 1px solid #ddd;
+        text-align: center;
+        word-wrap: break-word;
+        white-space: normal;
+        vertical-align: middle;
+    }
+
+    th {
+        background-color: #4fa3c6;
+        color: white;
+    }
+
+th:first-child {
+    width: 600px;
+    text-align: left;
+    background-color: #4fa3c6;
+    color: white;
+}
+
+td:first-child {
+    width: 600px;
+    text-align: left;
+    background-color: #a6d3e7;
+    color: black;
+    font-weight: bold;
+}
+
+    th:not(:first-child),
+    td:not(:first-child) {
+        width: 9%;
+    }
+
+    td input {
+    width: 90%;
+    padding: 6px;
+    border: none; 
+    outline: none; 
+    background-color: transparent; 
+    text-align: center;
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+}
+
+
+    td input:focus {
+        outline: none;
+        background-color: #e6f0ff;
+        border-color: #4fa3c6;
+    }
+
+    tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+    .button-container {
+    display: flex;
+    flex-direction: column; 
+}
+.button-container p,
+.button-container label {
+    margin: 0 0 5px 0; 
+    font-weight: bold;
+}
+
+</style>
+
+</head>
+<body>
+   
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+<script>
+function downloadTableAsPDF() {
+  const table = document.getElementById("kpiTable");
+  const selectedYear = document.getElementById("yearSelect").value;
+
+  if (!table || !selectedYear) {
+    alert("يرجى اختيار السنة أولاً.");
+    return;
+  }
+
+  const clone = table.cloneNode(true);
+
+  const container = document.createElement("div");
+  container.style.position = "relative";
+  container.style.padding = "20px";
+  container.style.width = "100%";
+  container.style.minHeight = "100vh";
+  container.style.boxSizing = "border-box";
+  container.style.backgroundImage = "url('images/404.jpg')";
+  container.style.backgroundSize = "cover";
+  container.style.backgroundRepeat = "no-repeat";
+  container.style.backgroundPosition = "center";
+
+  const title = document.createElement("h2");
+  title.textContent = "Laboratory- " + selectedYear;
+  title.style.textAlign = "center";
+  title.style.marginBottom = "20px";
+  title.style.position = "relative";
+  title.style.color = "#000";
+
+  container.appendChild(title);
+
+  clone.style.marginTop = "200px";
+  container.appendChild(clone);
+
+  const imagesDiv = document.createElement("div");
+  imagesDiv.style.display = "flex";
+  imagesDiv.style.justifyContent = "center";
+  imagesDiv.style.marginTop = "20px";
+  imagesDiv.style.gap = "20px";
+
+  const img1 = document.createElement("img");
+  img1.src = "images/k.jpg";
+  img1.style.width = "300px";
+  img1.style.height = "auto";
+  img1.style.position = "absolute";
+  img1.style.top = "0";
+  img1.style.right = "0";
+  img1.style.margin = "10px";
+
+  imagesDiv.appendChild(img1);
+  container.appendChild(imagesDiv);
+
+  const bottomLeftImg = document.createElement("img");
+  bottomLeftImg.src = "images/2025.jpg";
+  bottomLeftImg.style.width = "500px";
+  bottomLeftImg.style.position = "absolute";
+  bottomLeftImg.style.bottom = "10px";
+  bottomLeftImg.style.left = "10px";
+  bottomLeftImg.style.zIndex = "10";
+  container.appendChild(bottomLeftImg);
+
+  const bottomRightText = document.createElement("div");
+bottomRightText.textContent = "Source:Performance Development department";
+bottomRightText.style.position = "absolute";
+bottomRightText.style.bottom = "60px";
+bottomRightText.style.right = "10px";
+bottomRightText.style.fontSize = "16px";
+bottomRightText.style.color = "rgba(128, 128, 128, 0.5)";
+bottomRightText.style.backgroundColor = "transparent";
+bottomRightText.style.padding = "5px 10px";
+bottomRightText.style.borderRadius = "5px";
+bottomRightText.style.zIndex = "10";
+container.appendChild(bottomRightText);
+
+const bottomRightText2 = document.createElement("div");
+bottomRightText2.textContent = "Contact : 1588";
+bottomRightText2.style.position = "absolute";
+bottomRightText2.style.bottom = "35px";
+bottomRightText2.style.right = "10px";
+bottomRightText2.style.fontSize = "16px";
+bottomRightText2.style.color = "rgba(128, 128, 128, 0.5)";
+bottomRightText2.style.backgroundColor = "transparent";
+bottomRightText2.style.padding = "5px 10px";
+bottomRightText2.style.borderRadius = "5px";
+bottomRightText2.style.zIndex = "10";
+container.appendChild(bottomRightText2);
+
+const bottomRightText3 = document.createElement("div");
+bottomRightText3.textContent = "At King Saud Hospital Unayzah";
+bottomRightText3.style.position = "absolute";
+bottomRightText3.style.bottom = "10px";
+bottomRightText3.style.right = "10px";
+bottomRightText3.style.fontSize = "16px";
+bottomRightText3.style.color = "rgba(128, 128, 128, 0.5)";
+bottomRightText3.style.backgroundColor = "transparent";
+bottomRightText3.style.padding = "5px 10px";
+bottomRightText3.style.borderRadius = "5px";
+bottomRightText3.style.zIndex = "10";
+container.appendChild(bottomRightText3);
+
+  const dateDiv = document.createElement("div");
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+  dateDiv.textContent = today;
+  dateDiv.style.position = "absolute";
+  dateDiv.style.top = "10px";
+  dateDiv.style.left = "10px";
+  dateDiv.style.fontSize = "30px";
+  dateDiv.style.color = "#000";
+  dateDiv.style.backgroundColor = "transparent";
+  dateDiv.style.padding = "5px 10px";
+  dateDiv.style.borderRadius = "5px";
+
+  container.appendChild(dateDiv);
+
+  container.style.transform = "scale(0.8)";
+  container.style.transformOrigin = "top left";
+  container.style.width = "125%";
+
+  const opt = {
+    margin: 0,
+    filename: 'Laboratory' + selectedYear + '.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 1,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: document.documentElement.scrollHeight
+    },
+    jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+  };
+
+  html2pdf().set(opt).from(container).save();
+}
+</script>
+  <div class="narrow-sidebar">
+            <a href="login.html" class="icon"><i class="bi bi-person"></i></a>
+    <a href="index.html" class="icon"><i class="bi bi-house-door"></i></a>
+    <a href="laboratory3.html" class="icon"><i class="bi bi-table"></i></a>
+    <a href="laboratory4.html" class="icon" title="عرض الرسوم البيانية">
+      <i class="bi bi-bar-chart-line"></i>
+    </a>
+                              <a href="#" class="icon" onclick="downloadTableAsPDF()"><i class="bi bi-save"></i></a>
+
+    
+  </div>
+
+  
+     <div class="navbar">
+    <h2>Laboratory</h2>
+    <div class="button-container">
+ <p2 class="year-label">Year</p2>
+      <select id="yearSelect">
+        
+        <option value="">Year</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+        <option value="2028">2028</option>
+      </select>
+    </div>
+  </div>
+
+  <script>
+    // وظيفة الانتقال إلى صفحة dashboard.html
+    function navigateToDashboard() {
+        const selectedYear = document.getElementById('yearSelect').value;
+        if (selectedYear) {
+            // تمرير السنة كجزء من رابط الصفحة
+            window.location.href = `dash Laboratory.html?year=${selectedYear}`; // الانتقال إلى صفحة الرسوم البيانية مع السنة كجزء من الرابط
+        } else {
+            alert("Please select a year.");
+        }
+    }
+  </script>
+  <div class="content">
+    <table id="kpiTable">
+      <thead>
+        <tr>
+          <th>KPI</th>
+          <th>Jan</th>
+          <th>Feb</th>
+          <th>Mar</th>
+          <th>Apr</th>
+          <th>May</th>
+          <th>Jun</th>
+          <th>Jul</th>
+          <th>Aug</th>
+          <th>Sep</th>
+          <th>Oct</th>
+          <th>Nov</th>
+          <th>Dec</th>
+          <th>AVG</th>
+          <th>BENCHMARK</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+    import { set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAvRFOONcHF-retVrHhXBxAHAo4mpX6pmo",
+      authDomain: "laboratory-2a1f2.firebaseapp.com",
+      projectId: "laboratory-2a1f2",
+      storageBucket: "laboratory-2a1f2.appspot.com",
+      messagingSenderId: "486664438012",
+      appId: "1:486664438012:web:a3f3db379e1d331b49d779"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const kpis = [
+      "KPI 1: Percentage of Corrected Laboratory Reports",
+      "KPI 2: Percentage of Critical Results Exceeding 60 Minutes to Report",
+      "KPI 3: Percentage of Rejected Samples",
+      "KPI 4: Percentage of STAT Results Reported within 60 Minutes (In Lab)",
+      "KPI 5: Percentage of STAT Results Reported within 120 Minutes (Journey)",
+      "KPI 6: Percentage of Routines Results Reported within 4 hours"
+    ];
+
+    const benchmarks = ["1%", "0%", "0%", "95%", "95%", "95%"];
+
+    function applyColor(cell, value) {
+      if (value < 60) {
+        cell.style.backgroundColor = '#007bff';
+        cell.style.color = 'white';
+      } else if (value >= 60.1 && value <= 85) {
+        cell.style.backgroundColor = '#77DD77';
+        cell.style.color = 'white';
+      } else if (value >= 86 && value <= 119) {
+        cell.style.backgroundColor = 'yellow';
+        cell.style.color = 'black';
+      } else if (value > 119) {
+        cell.style.backgroundColor = 'red';
+        cell.style.color = 'white';
+      }
+    }
+
+    async function loadData() {
+  let year = document.getElementById("yearSelect").value || localStorage.getItem("currentYear");
+  document.getElementById("yearSelect").value = year;
+  const tbody = document.querySelector("#kpiTable tbody");
+  tbody.innerHTML = "";
+
+  if (!year) return;
+
+  const monthlyData = {};
+
+  // طلب كل الشهور دفعة وحدة
+  const promises = months.map(month => get(ref(db, `kpiData/${year}_${month}`)));
+  const snapshots = await Promise.all(promises);
+
+  snapshots.forEach((snapshot, index) => {
+    if (snapshot.exists()) {
+      monthlyData[months[index]] = snapshot.val();
+    }
+  });
+
+  if (Object.keys(monthlyData).length === 0) {
+    tbody.innerHTML = "<tr><td colspan='15'>No data available for the selected year.</td></tr>";
+    return;
+  }
+  const formattedForCharts = {};
+
+months.forEach(month => {
+  if (!monthlyData[month]) return;
+  formattedForCharts[month] = {};
+  kpis.forEach(kpi => {
+    const avg = monthlyData[month][kpi]?.average;
+    formattedForCharts[month][kpi] = avg !== undefined ? avg : "";
+  });
+});
+
+await set(ref(db, `monthlyAverages/${year}`), formattedForCharts);
+console.log("بيانات سيتم حفظها:", formattedForCharts);
+
+
+      kpis.forEach((kpi, index) => {
+        const row = tbody.insertRow();
+        row.insertCell().innerText = kpi;
+
+        let total = 0;
+        let count = 0;
+
+        months.forEach(month => {
+  const cell = row.insertCell();
+  let value = monthlyData[month]?.[kpi]?.average;
+
+  if (value !== undefined && value !== "" && !isNaN(value)) {
+    const num = parseFloat(value);
+    cell.innerText = num + "%";
+    applyColor(cell, num);
+    total += num;
+    count++;
+  } else {
+    cell.innerText = "";
+  }
+});
+
+        const avgCell = row.insertCell();
+        const avg = count > 0 ? (total / count).toFixed(2) : "";
+        avgCell.innerText = avg ? avg + "%" : "";
+        if (avg) applyColor(avgCell, parseFloat(avg));
+
+        const benchmarkCell = row.insertCell();
+        benchmarkCell.innerText = benchmarks[index];
+      });
+    }
+
+    document.getElementById('yearSelect').addEventListener('change', loadData);
+    window.addEventListener('load', loadData);
+  </script>
+</body>
+</html>

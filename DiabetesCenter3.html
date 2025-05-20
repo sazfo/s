@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KPI Charts</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .charts-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      padding: 20px;
+    }
+
+    .kpi-row {
+      width: 45%;
+      margin: 10px;
+      box-sizing: border-box;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 300px;
+      margin-top: 20px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="button-container">
+    <select id="yearSelect">
+      <option value="">Year</option>
+      <option value="2023">2023</option>
+      <option value="2024">2024</option>
+      <option value="2025">2025</option>
+      <option value="2026">2026</option>
+      <option value="2027">2027</option>
+      <option value="2028">2028</option>
+      <option value="2029">2029</option>
+      <option value="2030">2030</option>
+    </select>
+  </div>
+
+  <div id="chartsContainer" class="charts-container"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+            apiKey: "AIzaSyAK3WdokOB8tv2y1RKRLWEWO1J_-gij3E0",
+            authDomain: "ltgg-61e7d.firebaseapp.com",
+            projectId: "ltgg-61e7d",
+            storageBucket: "ltgg-61e7d.firebasestorage.app",
+            messagingSenderId: "88767682587",
+            appId: "1:88767682587:web:bbdbcda18b33fea76740be"
+        };
+    
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    document.addEventListener("DOMContentLoaded", function () {
+      let selectedYear = localStorage.getItem('selectedYear') || '';
+      document.getElementById('yearSelect').value = selectedYear;
+      if (selectedYear) {
+        loadCharts(selectedYear);
+      }
+
+      document.getElementById('yearSelect').addEventListener('change', function () {
+        selectedYear = this.value;
+        localStorage.setItem('selectedYear', selectedYear);
+        loadCharts(selectedYear);
+      });
+    });
+
+    let charts = [];
+    let selectedType = 'bar';
+    let selectedColor = '#4bc0c0';
+
+    function loadCharts(year) {
+      const chartData = {};
+      const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      const kpis = [
+      "1. Dialectologists to patient ratio",
+            "2. Clinical dietitian to patient ratio",
+            "3. Diabetes Educator Nurse to patient ratio",
+            "4. Foot Care Physicians to patient ratio",
+            "5. Clinic Productivity",
+            "6. No show rate",
+            "7. Waiting time for appointment",
+            "8. New Patient Ratio",
+            "9. Percentage of Patients Screened for Complications",
+            "10.Percentage of patients with HbA1c within the target",
+            "11.  Percentage of controlled patients who are referred to PHC",
+      ];
+
+      let container = document.getElementById('chartsContainer');
+      container.innerHTML = '';
+
+      const dbRef = ref(db, `kpi_data/${year}`);
+      get(dbRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          let data = snapshot.val();
+
+          kpis.forEach((kpi, index) => {
+      chartData[index] = [];
+      months.forEach(month => {
+        let value = data[kpi.replace(/\./g, "_")] && data[kpi.replace(/\./g, "_")][month]
+          ? parseFloat(data[kpi.replace(/\./g, "_")][month].value || data[kpi.replace(/\./g, "_")][month])
+          : 0;
+              chartData[index].push(isNaN(value) ? 0 : value);
+            });
+
+            let row = document.createElement('div');
+            row.classList.add('kpi-row');
+            row.innerHTML = ` 
+              <h3>${kpi}</h3>
+              <div class="chart-wrapper">
+                <canvas id="chart${index}"></canvas>
+                <div class="chart-controls">
+                  <label>نوع الرسم:</label>
+                  <select id="chartTypeSelect${index}">
+                    <option value="bar">Bar</option>
+                    <option value="line">Line</option>
+                    <option value="pie">Pie</option>
+                  </select>
+                  <label>اللون:</label>
+                  <input type="color" id="chartColorSelect${index}" value="#4bc0c0">
+                </div>
+              </div>
+            `;
+            container.appendChild(row);
+
+            let ctx = document.getElementById(`chart${index}`).getContext('2d');
+            const chartConfig = getChartConfig('bar', chartData[index]);
+            charts[index] = new Chart(ctx, chartConfig);
+
+            let storedType = localStorage.getItem(`chartType${index}`) || 'bar';
+            let storedColor = localStorage.getItem(`chartColor${index}`) || '#4bc0c0';
+
+            document.getElementById(`chartTypeSelect${index}`).value = storedType;
+            document.getElementById(`chartColorSelect${index}`).value = storedColor;
+
+            updateChart(index, storedType, storedColor);
+
+            document.getElementById(`chartTypeSelect${index}`).addEventListener('change', function () {
+              let type = this.value;
+              localStorage.setItem(`chartType${index}`, type);
+              updateChart(index, type, localStorage.getItem(`chartColor${index}`));
+            });
+
+            document.getElementById(`chartColorSelect${index}`).addEventListener('input', function () {
+              let color = this.value;
+              localStorage.setItem(`chartColor${index}`, color);
+              updateChart(index, localStorage.getItem(`chartType${index}`), color);
+            });
+          });
+        } else {
+          container.innerHTML = "<p style='color: red;'>لا توجد بيانات للسنة المختارة في Firebase.</p>";
+        }
+      }).catch((error) => {
+        console.error("Error fetching data from Firebase:", error);
+      });
+    }
+
+    function updateChart(index, type, color) {
+      const chartData = charts[index].data.datasets[0].data;
+      charts[index].destroy();
+
+      let ctx = document.getElementById(`chart${index}`).getContext('2d');
+      const chartConfig = getChartConfig(type, chartData, color);
+      charts[index] = new Chart(ctx, chartConfig);
+    }
+
+    function getChartConfig(type, data, color) {
+      return {
+        type: type,
+        data: {
+          labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+          datasets: [{
+            label: 'KPI Value',
+            data: data,
+            backgroundColor: color,
+            borderColor: color,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: 20
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>

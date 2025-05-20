@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title>Welcome To Adaa</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Sono:wght@200;300;400;500;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/bootstrap-icons.css">
+        <link rel="stylesheet" href="css/owl.carousel.min.css">
+        <link rel="stylesheet" href="css/owl.theme.default.min.css">
+        <link href="css/templatemo-pod-talk.css" rel="stylesheet">
+    </head>
+    <body>
+        
+        <main>
+            <style>
+                html, body {
+                  background-image: url('../images/404.jpg');
+                  background-repeat: repeat-y;
+                  background-size: cover;
+                  background-position: center;
+                  height: 100%;
+                  width: 100%;
+                  margin: 0;
+                  padding: 0;
+                }
+                .logo-top-right {
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    height: 80px;
+                    z-index: 9999;
+                }
+                .navbar .nav-item .nav-link {
+                    color: #4fa3c6!important;
+                    transition: color 0.3s ease;
+                }
+                .navbar .nav-item .nav-link:hover {
+                    color: #4fa3c6 !important;
+                }
+                .custom-btn.custom-border-btn {
+                    background-color:#4fa3c6;
+                    border-color:#4fa3c6;
+                    color: white;
+                    transition: background-color 0.3s ease, border-color 0.3s ease;
+                }
+                .custom-btn.custom-border-btn:hover {
+                    background-color:#4fa3c6;
+                    border-color: #2b79a8;
+                }
+                .navbar-toggler {
+                    border-color: #348CD2;
+                }
+                h1.text-white, p.text-white {
+                    color:#4fa3c6 !important;
+                }
+            </style>
+            <section class="hero-section">
+                <div class="container">
+                    <div class="row">
+                        <div class="owl-carousel owl-theme" id="carouselItems">
+                            <div class="owl-carousel-info-wrap item" data-name="Radiology">
+                                <div class="owl-carousel-info">
+                                    <span class="badge">Radiology</span>
+                                </div>
+                                <div style="text-align:center; margin-top:10px;">
+                                    <input type="file" id="fileUploadRadiology" style="display:none;" onchange="showFile('Radiology')">
+                                    <button onclick="document.getElementById('fileUploadRadiology').click()" style="background-color:white;color:#4fa3c6;border:none;font-size:large;">رفع ملف Radiology</button>
+                                    <div id="fileContainerRadiology" style="margin-top:10px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="owl-carousel-info-wrap item" data-name="Blood Bank">
+                                <div class="owl-carousel-info">
+                                    <span class="badge">Blood Bank</span>
+                                </div>
+                                <div style="text-align:center; margin-top:10px;">
+                                    <input type="file" id="fileUploadBloodBank" style="display:none;" onchange="showFile('BloodBank')">
+                                    <button onclick="document.getElementById('fileUploadBloodBank').click()" style="background-color:white;color:#4fa3c6;border:none;font-size:large;">رفع ملف Blood Bank</button>
+                                    <div id="fileContainerBloodBank" style="margin-top:10px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="owl-carousel-info-wrap item" data-name="Laboratory">
+                                <div class="owl-carousel-info">
+                                    <span class="badge">Laboratory</span>
+                                </div>
+                                <div style="text-align:center; margin-top:10px;">
+                                    <input type="file" id="fileUploadLaboratory" style="display:none;" onchange="showFile('Laboratory')">
+                                    <button onclick="document.getElementById('fileUploadLaboratory').click()" style="background-color:white;color:#4fa3c6;border:none;font-size:large;">رفع ملف Laboratory</button>
+                                    <div id="fileContainerLaboratory" style="margin-top:10px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="owl-carousel-info-wrap item" data-name="Emergency">
+                                <div class="owl-carousel-info">
+                                    <span class="badge">Emergency</span>
+                                </div>
+                                <div style="text-align:center; margin-top:10px;">
+                                    <input type="file" id="fileUploadEmergency" style="display:none;" onchange="showFile('Emergency')">
+                                    <button onclick="document.getElementById('fileUploadEmergency').click()" style="background-color:white;color:#4fa3c6;border:none;font-size:large;">رفع ملف Emergency</button>
+                                    <div id="fileContainerEmergency" style="margin-top:10px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="owl-carousel-info-wrap item" data-name="Operating Room">
+                                <div class="owl-carousel-info">
+                                    <span class="badge">Operating Room</span>
+                                </div>
+                                <div style="text-align:center; margin-top:10px;">
+                                    <input type="file" id="fileUploadOperatingRoom" style="display:none;" onchange="showFile('OperatingRoom')">
+                                    <button onclick="document.getElementById('fileUploadOperatingRoom').click()" style="background-color:white;color:#4fa3c6;border:none;font-size:large;">رفع ملف Operating Room</button>
+                                    <div id="fileContainerOperatingRoom" style="margin-top:10px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="owl-carousel-info-wrap item" data-name="Home Health">
+                                <div class="owl-carousel-info">
+                                    <span class="badge">Home Health</span>
+                                </div>
+                                <div style="text-align:center; margin-top:10px;">
+                                    <input type="file" id="fileUploadHomeHealth" style="display:none;" onchange="showFile('HomeHealth')">
+                                    <button onclick="document.getElementById('fileUploadHomeHealth').click()" style="background-color:white;color:#4fa3c6;border:none;font-size:large;">رفع ملف Home Health</button>
+                                    <div id="fileContainerHomeHealth" style="margin-top:10px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="owl-carousel-info-wrap item" data-name="Diabetes Center">
+                                <div class="owl-carousel-info">
+                                    <span class="badge">Diabetes Center</span>
+                                </div>
+                                <div style="text-align:center; margin-top:10px;">
+                                    <input type="file" id="fileUploadDiabetesCenter" style="display:none;" onchange="showFile('DiabetesCenter')">
+                                    <button onclick="document.getElementById('fileUploadDiabetesCenter').click()" style="background-color:white;color:#4fa3c6;border:none;font-size:large;">رفع ملف Diabetes Center</button>
+                                    <div id="fileContainerDiabetesCenter" style="margin-top:10px;"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="latest-podcast-section section-padding pb-0" id="section_2">
+                <div class="container">
+                    <div class="row justify-content-center"></div>
+                </div>
+            </section>
+        </main>
+
+    
+
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script src="js/owl.carousel.min.js"></script>
+        <script src="js/custom.js"></script>
+        <script>
+function showFile(section) {
+    const input = document.getElementById(`fileUpload${section}`);
+    const container = document.getElementById(`fileContainer${section}`);
+
+    if (input.files.length > 0) {
+        const file = input.files[0];
+        const url = URL.createObjectURL(file);
+
+        localStorage.setItem(`uploadedFile_${section}`, JSON.stringify({ name: file.name, url: url }));
+
+        container.innerHTML = `
+            <p> ${file.name}</p>
+            <a href="${url}" download="${file.name}" style="color: #4fa3c6; text-decoration: none; font-weight: bold;">
+               
+            </a>
+        `;
+    } else {
+        container.innerText = "";
+    }
+}
+
+function showFile(section) {
+    const input = document.getElementById(`fileUpload${section}`);
+    const container = document.getElementById(`fileContainer${section}`);
+
+    if (input.files.length > 0) {
+        const file = input.files[0];
+        const url = URL.createObjectURL(file);
+
+        localStorage.setItem(`uploadedFile_${section}`, JSON.stringify({ name: file.name, url: url }));
+
+        container.innerHTML = `
+            <p>${file.name}</p>
+            <a href="${url}" download="${file.name}" style="color: #4fa3c6; text-decoration: none; font-weight: bold;">
+                تحميل الملف
+            </a>
+        `;
+    } else {
+        container.innerText = "";
+    }
+}
+
+</script>
+

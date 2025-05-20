@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ada’a Program Assignment</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    .date {
+      float: left;
+      margin-bottom: 20px;
+    }
+    .logo {
+      text-align: right;
+    }
+    h2 {
+      text-align: center;
+      text-decoration: underline;
+      margin-top: 40px;
+    }
+    .description {
+      margin-top: 30px;
+    }
+    .note {
+      font-style: italic;
+      margin-top: 30px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+    table.signature-table {
+      margin-top: 0;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 12px;
+      vertical-align: top;
+    }
+    .input-field {
+      width: 100%;
+      height: 30px;
+    }
+    .signature-large {
+      height: 120px;
+    }
+    .approved-box {
+      width: 100%;
+      border: 1px solid #000;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      font-weight: bold;
+      margin: 0;
+      box-sizing: border-box;
+    }
+    .signature-input {
+      width: 100px;
+      height: 30px;
+      border: 1px solid #000;
+      box-sizing: border-box;
+      display: inline-block;
+      vertical-align: middle;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="date">Date: ___ / ___ / 20___</div>
+  <div class="logo">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/9/99/King_Saud_Hospital_Unaizah_Logo.png" height="60" alt="Logo" /><br />
+    King Saud Hospital Unaizah<br />
+    <small>Empowered by Qassim Health Cluster</small>
+  </div>
+
+  <h2>Ada’a Program Assignment</h2>
+
+  <div class="description">
+    Based on the recommendations provided by the Head of Department and the Director of the Performance Improvement Department (Ada’a PIO Hospital Lead), you have been assigned to your respective area as outlined in the table below within the Ada’a program at King Saud Hospital in Unaizah. This Assignment is an agreement on the ADAA responsibility Roll.
+  </div>
+
+  <table style="margin-bottom: 30px;">
+    <tr>
+      <th style="width: 25%;">Domain</th>
+      <td><input type="text" class="input-field" /></td>
+    </tr>
+    <tr>
+      <th>PROPOSED ROLE</th>
+      <td>
+        <label><input type="radio" name="role" /> Domain Leader</label><br />
+        <label><input type="radio" name="role" /> Change Agent</label><br />
+        <label><input type="radio" name="role" /> Data Collector</label>
+      </td>
+    </tr>
+    <tr>
+      <th>Name of the Assignee</th>
+      <td><input type="text" class="input-field" /></td>
+    </tr>
+    <tr>
+      <th>Contact Number</th>
+      <td><input type="text" class="input-field" /></td>
+    </tr>
+    <tr>
+      <th>E-mail Address</th>
+      <td><input type="text" class="input-field" /></td>
+    </tr>
+  </table>
+
+  <table class="signature-table" style="margin-top: 0;">
+    <tr>
+      <th>Reviewed by:</th>
+      <th>Reviewed by:</th>
+    </tr>
+    <tr>
+      <td class="signature-large">Domain Leader</td>
+      <td class="signature-large">PIO Hospital Lead</td>
+    </tr>
+  </table>
+
+  <div class="approved-box">Approved by:</div>
+
+  <table style="margin-top: 0;">
+    <tr>
+      <td style="border: 1px solid #000; padding: 20px; text-align: center;">
+        MR : IBRAHIMALI AL WEHAIBI<br />
+        HOSPITAL DIRECTOR<br />
+        Supervisor of Autonomous Operations Programs<br />
+        King Saud Hospital – Unaizah
+        <br /><br />
+        <strong>Electronic Signature</strong><br />
+        <input type="text" class="signature-input" />
+      </td>
+    </tr>
+  </table>
+
+  <div class="note">
+    *Please note it is essential to inform the Performance Improvement Department of any changes in the role at least two months prior.
+  </div>
+</body>
+</html>

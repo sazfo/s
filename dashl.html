@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI Charts</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* نفس ستايلك بالضبط */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 20px; 
+            padding: 20px;
+        }
+        .kpi-row {
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .chart-wrapper { width: 100%; height: 300px; }
+        canvas { width: 100% !important; height: 100% !important; }
+        .chart-buttons { margin-top: 10px; }
+        .chart-buttons input[type="color"] {
+            padding: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .chart-buttons select, .chart-buttons button {
+            padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="button-container">
+        <select id="yearSelect">
+            <option value="">Year</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+        </select>
+    </div>
+    
+    <div id="chartsContainer" class="charts-container"></div>
+
+    <!-- كل السكربتات داخل module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyAvRFOONcHF-retVrHhXBxAHAo4mpX6pmo",
+          authDomain: "laboratory-2a1f2.firebaseapp.com",
+          projectId: "laboratory-2a1f2",
+          storageBucket: "laboratory-2a1f2.appspot.com",
+          messagingSenderId: "486664438012",
+          appId: "1:486664438012:web:a3f3db379e1d331b49d779"
+        };
+      
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let charts = []; 
+
+        document.addEventListener("DOMContentLoaded", function () {
+            let selectedYear = localStorage.getItem('selectedYear') || '2023';
+            document.getElementById('yearSelect').value = selectedYear;
+            loadCharts(selectedYear);
+
+            document.getElementById('yearSelect').addEventListener('change', function() {
+                selectedYear = this.value;
+                localStorage.setItem('selectedYear', selectedYear);
+                loadCharts(selectedYear);
+            });
+        });
+
+        async function loadCharts(year) {
+            try {
+                const snapshot = await get(ref(db, `monthlyAverages/${year}`));
+                const data = snapshot.exists() ? snapshot.val() : null;
+                console.log(data);  
+
+                if (!data) {
+                    console.error('No data found for year: ', year);
+                    return;
+                }
+
+                const kpis = [
+                  "KPI 1: Percentage of Corrected Laboratory Reports",
+                  "KPI 2: Percentage of Critical Results Exceeding 60 Minutes to Report",
+                  "KPI 3: Percentage of Rejected Samples",
+                  "KPI 4: Percentage of STAT Results Reported within 60 Minutes (In Lab)",
+                  "KPI 5: Percentage of STAT Results Reported within 120 Minutes (Journey)",
+                  "KPI 6: Percentage of Routines Results Reported within 4 hours"
+                ];
+
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+                const chartsContainer = document.getElementById('chartsContainer');
+                chartsContainer.innerHTML = '';
+
+                kpis.forEach((kpi, index) => {
+                    let chartContainer = document.createElement('div');
+                    chartContainer.classList.add('kpi-row');
+
+                    let title = document.createElement('h3');
+                    title.textContent = kpi;
+                    chartContainer.appendChild(title);
+
+                    let chartCanvas = document.createElement('canvas');
+                    chartContainer.appendChild(chartCanvas);
+
+                    let dataValues = months.map(month => parseFloat(data[month]?.[kpi] || 0));
+
+                    console.log('Data values for the chart:', dataValues);
+
+                    let chart = new Chart(chartCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: kpi,
+                                data: dataValues,
+                                backgroundColor: '#007bff',
+                                borderColor: '#007bff',
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + '%';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    charts.push(chart);
+
+                    let buttonContainer = document.createElement('div');
+                    buttonContainer.classList.add('chart-buttons');
+
+                    let colorInput = document.createElement('input');
+                    colorInput.type = 'color';
+                    colorInput.addEventListener('input', function () {
+                        changeChartColor(index, this.value);
+                    });
+                    buttonContainer.appendChild(colorInput);
+
+                    let typeSelect = document.createElement('select');
+                    typeSelect.innerHTML = `
+                        <option value="bar">Bar</option>
+                        <option value="line">Line</option>
+                        <option value="pie">Pie</option>
+                    `;
+                    typeSelect.addEventListener('change', function () {
+                        chart.config.type = this.value;
+                        chart.update();
+                    });
+                    buttonContainer.appendChild(typeSelect);
+
+                    chartContainer.appendChild(buttonContainer);
+                    chartsContainer.appendChild(chartContainer);
+                });
+
+            } catch (error) {
+                console.error('Error loading charts:', error);
+            }
+        }
+
+        function changeChartColor(index, color) {
+            if (charts[index]) {
+                charts[index].data.datasets[0].backgroundColor = color;
+                charts[index].data.datasets[0].borderColor = color;
+                charts[index].update(); 
+            }
+        }
+    </script>
+</body>
+</html>

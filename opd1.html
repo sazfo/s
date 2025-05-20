@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background-color: #ddd;
+      font-family: Arial, sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 6px;
+      text-align: center;
+      
+    }
+    th {
+      background-color: #c2e0c6;
+      font-weight: bold;
+    }
+    .highlight-yellow {
+      background-color: #ffff99;
+    }
+    .title {
+      background-color: #f1c232;
+      font-weight: bold;
+      text-align: left;
+      padding: 10px;
+    }
+    input {
+      width: 100%;
+      border: none;
+      padding: 4px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .button-container {
+      display: flex;
+      justify-content: flex-end; 
+      gap: 10px; 
+      padding: 10px; 
+      padding: 0;
+      margin: 0;
+      
+    }
+   
+  
+ .navbar {
+            background-color:white;
+    padding: 10px;
+    color: black;
+    
+    top: 10px;
+    /*left: 270px;*/
+    left: 130px;
+    right: 10px;
+    z-index: 1001;
+            box-shadow: 0 15px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+        }
+
+        .navbar h2 {
+            margin: 0;
+    text-align: center;
+    font-size: 40px;
+    flex-grow: 1; 
+        }
+  
+
+  </style>
+</head>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import {
+  getDatabase, ref, set, get, child, onValue
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCfXcvzduFgPsOzfpRG4CA29SnlqY9-JYM",
+    authDomain: "project-6371601637646468923.firebaseapp.com",
+    projectId: "project-6371601637646468923",
+    storageBucket: "project-6371601637646468923.firebasestorage.app",
+    messagingSenderId: "499579951191",
+    appId: "1:499579951191:web:e65cb41339b98e957dab12"
+  };
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
+window.saveData = function () {
+  const year = document.getElementById('yearSelect').value;
+  if (year === "Year") {
+    alert("Please select a year.");
+    return;
+  }
+
+  const allTables = document.querySelectorAll("table");
+  const tableData = [];
+
+  allTables.forEach((table, index) => {
+    const rows = table.querySelectorAll("tr");
+    const rowData = [];
+
+    rows.forEach((row, rowIndex) => {
+      const cells = row.querySelectorAll("td, th");
+      const cellData = [];
+      let rowKey = "row" + (rowIndex + 1);
+
+      cells.forEach((cell, cellIndex) => {
+        const input = cell.querySelector("input, select");
+        const value = input ? input.value : cell.textContent.trim();
+        if (cellIndex === 0 && value !== "") rowKey = value;
+        cellData.push(value);
+      });
+
+      if (cellData.length > 0) {
+        rowData.push({
+          key: rowKey,
+          values: cellData
+        });
+      }
+    });
+
+    tableData.push({
+      tableNumber: index + 1,
+      rows: rowData
+    });
+  });
+
+  const data = {
+    year,
+    timestamp: new Date().toISOString(),
+    tables: tableData
+  };
+
+  set(ref(database, `statistics/${year}`), data)
+  
+  .then(() => {
+      alert("✔️ Data saved successfully!");
+      window.location.href = "opd2.html";
+    })
+    
+    .catch((error) => alert("❌ Error saving data: " + error.message));
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const yearSelect = document.getElementById('yearSelect');
+
+  yearSelect.addEventListener('change', () => {
+    const selectedYear = yearSelect.value;
+    if (selectedYear === "Year") return;
+
+    const dbRef = ref(database);
+    get(child(dbRef, `statistics/${selectedYear}`)).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        loadTableData(data.tables);
+      } else {
+        console.log("No data found for this year.");
+      }
+    }).catch((error) => {
+      console.error("Error loading data:", error);
+    });
+  });
+
+  loadSpecialties(); 
+});
+
+function createSpecialtySelect(selectedValue) {
+  const specialties = [
+    "Anesthesia", "Cardiology", "Dentistry", "Dermatology", "Endocrinology",
+    "Family Medicine", "Gastroenterology", "General Surgery", "Hematology",
+    "Internal Medicine", "Nephrology", "Neurology", "Obstetrics and Gynecology",
+    "Oncology", "Ophthalmology", "Orthopedics", "Otolaryngology",
+    "Pediatrics", "Psychiatry", "Pulmonology", "Radiology",
+    "Rheumatology", "Urology"
+  ];
+  const select = document.createElement("select");
+  select.appendChild(new Option("", ""));
+  specialties.forEach(spec => select.appendChild(new Option(spec, spec)));
+
+  if (selectedValue && !specialties.includes(selectedValue)) {
+    select.appendChild(new Option(selectedValue, selectedValue));
+  }
+  select.value = selectedValue || "";
+  select.onchange = function () {
+    handleSpecialtyChange(this);
+  };
+  return select;
+}
+
+function createClinicSelect(specialty, selectedValue) {
+  const clinics = clinicData13[specialty] || [];
+  const select = document.createElement("select");
+  select.appendChild(new Option("", ""));
+  clinics.forEach(clinic => select.appendChild(new Option(clinic, clinic)));
+
+  if (selectedValue && !clinics.includes(selectedValue)) {
+    select.appendChild(new Option(selectedValue, selectedValue));
+  }
+  select.value = selectedValue || "";
+  select.onchange = function () {
+    handleClinicChange(this);
+  };
+  return select;
+}
+
+function loadTableData(tables) {
+  const allTables = document.querySelectorAll("table");
+
+  tables.forEach((tableData, index) => {
+    const table = allTables[index];
+    if (!table) return;
+
+    const tbody = table.querySelector("tbody") || table;
+
+    while (tbody.rows.length > 2) {
+      tbody.deleteRow(2);
+    }
+
+    tableData.rows.slice(1).forEach(rowData => {
+      if (rowData.values[0] === "Speciality" || rowData.values[0] === "Utilization") {
+        return;
+      }
+
+      const newRow = document.createElement("tr");
+
+      rowData.values.forEach((value, colIndex) => {
+        const cell = document.createElement("td");
+
+        if (colIndex === 0) {
+          // تخصص
+          const specialties = [
+            "Anesthesia", "Cardiology", "Dentistry", "Dermatology", "Endocrinology",
+            "Family Medicine", "Gastroenterology", "General Surgery", "Hematology",
+            "Internal Medicine", "Nephrology", "Neurology", "Obstetrics and Gynecology",
+            "Oncology", "Ophthalmology", "Orthopedics", "Otolaryngology",
+            "Pediatrics", "Psychiatry", "Pulmonology", "Radiology",
+            "Rheumatology", "Urology"
+          ];
+          const select = document.createElement("select");
+          select.appendChild(new Option("", ""));
+          specialties.forEach(spec => select.appendChild(new Option(spec, spec)));
+          if (value && !specialties.includes(value)) {
+            select.appendChild(new Option(value, value));
+          }
+          select.value = value || "";
+          select.onchange = function () {
+            const clinicSelect = this.closest("tr").cells[1].querySelector("select");
+            updateClinicOptions(this.value, clinicSelect);
+          };
+          cell.appendChild(select);
+
+        } else if (colIndex === 1) {
+          const select = document.createElement("select");
+          select.appendChild(new Option("", ""));
+          const specialty = rowData.values[0] || "";
+          const clinics = clinicData13[specialty] || [];
+          clinics.forEach(clinic => select.appendChild(new Option(clinic, clinic)));
+          if (value && !clinics.includes(value)) {
+            select.appendChild(new Option(value, value));
+          }
+          select.value = value || "";
+          select.onchange = function () {
+            handleClinicChange(this);
+          };
+          cell.appendChild(select);
+
+        } else {
+          const input = document.createElement("input");
+          input.type = "text";
+          input.value = value || "";
+          applyColor(input, input.value);
+          input.oninput = function () {
+            applyColor(this, this.value);
+          };
+          cell.appendChild(input);
+        }
+
+        newRow.appendChild(cell);
+      });
+
+      tbody.appendChild(newRow);
+    });
+  });
+}
+
+
+function updateClinicOptions(specialty, clinicSelect) {
+  clinicSelect.innerHTML = '';
+  clinicSelect.appendChild(new Option("", ""));
+  const clinics = clinicData13[specialty] || [];
+  clinics.forEach(clinic => clinicSelect.appendChild(new Option(clinic, clinic)));
+}
+
+
+window.saveSpecialtyAndClinic = function () {
+  const specialty = document.getElementById("specialty").value;
+  const clinic = document.getElementById("clinic").value;
+
+  const specialtyRef = ref(database, `specialties/${specialty}`);
+  get(specialtyRef).then(snapshot => {
+    let clinics = [];
+    if (snapshot.exists()) clinics = snapshot.val();
+
+    if (!clinics.includes(clinic)) {
+      clinics.push(clinic);
+      set(specialtyRef, clinics)
+        .then(() => alert("✔️ Specialty & Clinic Saved!"));
+    }
+  });
+};
+
+function loadSpecialties() {
+  const specialtySelect = document.getElementById("specialty");
+  get(ref(database, 'specialties')).then(snapshot => {
+    if (snapshot.exists()) {
+      const specialties = snapshot.val();
+      specialtySelect.innerHTML = '<option value=""></option>';
+      for (let specialty in specialties) {
+        const option = document.createElement("option");
+        option.value = specialty;
+        option.textContent = specialty;
+        specialtySelect.appendChild(option);
+      }
+    }
+  });
+}
+function applyColor(cell, value) {
+  value = parseFloat(value);
+  if (!isNaN(value)) {
+   if (value >= 90 && value <= 100) {
+      cell.style.backgroundColor = '#007bff';
+      cell.style.color = 'white';
+    } else if (value >= 80 && value < 90) {
+      cell.style.backgroundColor = '#77DD77';
+      cell.style.color = 'white';
+    } else if (value >= 70 && value < 80) {
+      cell.style.backgroundColor = '#F7DC6F';
+      cell.style.color = 'black';
+    } else if (value < 70) {
+      cell.style.backgroundColor = 'red';
+      cell.style.color = 'white';
+    }
+  } else {
+    cell.style.backgroundColor = '';
+    cell.style.color = '';
+  }
+}
+
+document.addEventListener("input", function (e) {
+  if (e.target.tagName === "INPUT" && e.target.type === "text") {
+    applyColor(e.target, e.target.value);
+  }
+});
+
+
+
+
+
+
+
+
+</script>
+
+<!--<script>history.pushState(null, "", window.location.href.replace(/[^/]+$/, "OPD"));
+
+</script>-->
+<body>
+ <div class="navbar">
+        <h2>OPD</h2>
+        <div class="button-container">
+            <select id="yearSelect">
+                <option value="">Year</option>
+                
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="2030">2030</option>
+
+                
+            </select>
+            
+        </div>
+    </div>
+
+      
+<table id="clinicTable">
+  <tr> 
+        
+    <td></td>
+    <td></td>
+
+
+    <td class="highlight-yellow">January</td>
+    
+    <td class="highlight-yellow">February</td>
+    <td class="highlight-yellow">March</td>
+    <td class="highlight-yellow">April</td>
+    <td class="highlight-yellow">May</td>
+    <td class="highlight-yellow">June</td>
+    <td class="highlight-yellow">July</td>
+    <td class="highlight-yellow">August</td>
+    <td class="highlight-yellow">September</td>
+    <td class="highlight-yellow">October</td>
+    <td class="highlight-yellow">November</td>    
+        <td class="highlight-yellow">December</td>
+
+
+
+
+
+</tr>
+
+
+<tr>
+  <th>Speciality
+    <th>Sub-speciality </th>
+    <th>Utilization
+
+    </th>
+       <th>Utilization
+
+    </th>   
+     <th>Utilization
+
+    </th>   
+     <th>Utilization
+
+    </th>    <th>Utilization
+
+    </th>    <th>Utilization
+
+    </th>    <th>Utilization
+
+    </th>    <th>Utilization
+
+    </th>    <th>Utilization
+
+    </th>    <th>Utilization
+
+    </th>    <th>Utilization
+
+    </th>    <th>Utilization
+
+    </th>
+  </th>
+
+
+</tr>
+
+
+  
+<tr>
+  <td>
+    <select id="specialty" onchange="updateClinics()">
+      <option value=""></option>
+      <option value="Anesthesia">Anesthesia</option>
+      <option value="Cardiology">Cardiology</option>
+      <option value="Dentistry">Dentistry</option>
+      <option value="Dermatology">Dermatology</option>
+      <option value="Endocrinology">Endocrinology</option>
+      <option value="FamilyMedicine">Family Medicine</option>
+      <option value="Gastroenterology">Gastroenterology</option>
+      <option value="GeneralSurgery">General Surgery</option>
+      <option value="Hematology">Hematology</option>
+      <option value="Hepatology">Hepatology</option>
+      <option value="Immunology">Immunology</option>
+      <option value="InfectiousDiseases">Infectious Diseases</option>
+      <option value="InternalMedicine">Internal Medicine</option>
+      <option value="Mental Health">Mental Health</option>
+      <option value="Neonatology">Neonatology</option>
+      <option value="Neurology">Neurology</option>
+      <option value="Neurosurgery">Neurosurgery</option>
+      <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+      <option value="Oncology">Oncology</option>
+      <option value="Ophthalmology">Ophthalmology</option>
+      <option value="Orthopedics">Orthopedics</option>
+      <option value="Otolaryngology">Otolaryngology</option>
+      <option value="Pediatrics">Pediatrics</option>
+      <option value="PediatricSurgery">Pediatric Surgery</option>
+      <option value="Psychiatry">Psychiatry</option>
+      <option value="Pulmonology">Pulmonology</option>
+      <option value="Rehabilitation">Rehabilitation</option>
+      <option value="Rheumatology">Rheumatology</option>
+      <option value="ScreeningClinic">Screening Clinic</option>
+      <option value="Urology">Urology</option>
+      <option value="VascularSurgery">Vascular Surgery</option>
+      <option value="Other">Other</option>
+    </select>
+  </td>
+
+  <td>
+    <select id="clinic">
+      <option value=""></option>
+    </select>
+  </td>
+
+
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+  const clinicData = {
+    Anesthesia: ["General", "Palliative Care", "Pain Management"],
+    Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+    Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+    Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+    Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+    FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+    Gastroenterology: ["Gastroenterology"],
+    GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+    Hematology: ["Hematology"],
+    Hepatology: ["Hepatology"],
+    Immunology: ["Immunology"],
+    InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+    InternalMedicine: ["General"],
+    "Mental Health": ["Mental Health"],
+    Neonatology: ["Neonatology", "Well babies"],
+    Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+    Neurosurgery: ["Neurosurgery"],
+    ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+    Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+    Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+    Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+    Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+    Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+    PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+    Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+    Pulmonology: ["Pulmonology"],
+    Rehabilitation: ["Rehabilitation"],
+    Rheumatology: ["Rheumatology"],
+    ScreeningClinic: ["ScreeningClinic"],
+    Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+    VascularSurgery: ["General", "Diabetic Foot"],
+    Other: ["Other"]
+  };
+
+  function updateClinics() {
+    const specialtySelect = document.getElementById("specialty");
+    const clinicSelect = document.getElementById("clinic");
+    const selectedSpecialty = specialtySelect.value;
+
+    clinicSelect.innerHTML = '<option value=""></option>';
+
+    if (clinicData[selectedSpecialty]) {
+      clinicData[selectedSpecialty].forEach(clinic => {
+        const option = document.createElement("option");
+        option.value = clinic;
+        option.textContent = clinic;
+        clinicSelect.appendChild(option);
+      });
+    }
+  }
+</script>
+
+
+
+
+
+
+
+
+  
+<tr>
+  <td>
+    <select id="specialty2" onchange="updateClinics2()">
+      <option value=""></option>
+      <option value="Anesthesia">Anesthesia</option>
+      <option value="Cardiology">Cardiology</option>
+      <option value="Dentistry">Dentistry</option>
+      <option value="Dermatology">Dermatology</option>
+      <option value="Endocrinology">Endocrinology</option>
+      <option value="FamilyMedicine">Family Medicine</option>
+      <option value="Gastroenterology">Gastroenterology</option>
+      <option value="GeneralSurgery">General Surgery</option>
+      <option value="Hematology">Hematology</option>
+      <option value="Hepatology">Hepatology</option>
+      <option value="Immunology">Immunology</option>
+      <option value="InfectiousDiseases">Infectious Diseases</option>
+      <option value="InternalMedicine">Internal Medicine</option>
+      <option value="Mental Health">Mental Health</option>
+      <option value="Neonatology">Neonatology</option>
+      <option value="Neurology">Neurology</option>
+      <option value="Neurosurgery">Neurosurgery</option>
+      <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+      <option value="Oncology">Oncology</option>
+      <option value="Ophthalmology">Ophthalmology</option>
+      <option value="Orthopedics">Orthopedics</option>
+      <option value="Otolaryngology">Otolaryngology</option>
+      <option value="Pediatrics">Pediatrics</option>
+      <option value="PediatricSurgery">Pediatric Surgery</option>
+      <option value="Psychiatry">Psychiatry</option>
+      <option value="Pulmonology">Pulmonology</option>
+      <option value="Rehabilitation">Rehabilitation</option>
+      <option value="Rheumatology">Rheumatology</option>
+      <option value="ScreeningClinic">Screening Clinic</option>
+      <option value="Urology">Urology</option>
+      <option value="VascularSurgery">Vascular Surgery</option>
+      <option value="Other">Other</option>
+    </select>
+  </td>
+
+  <td>
+    <select id="clinic2">
+      <option value=""></option>
+    </select>
+  </td>
+
+
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+  const clinicData2 = {
+    Anesthesia: ["General", "Palliative Care", "Pain Management"],
+    Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+    Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+    Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+    Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+    FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+    Gastroenterology: ["Gastroenterology"],
+    GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+    Hematology: ["Hematology"],
+    Hepatology: ["Hepatology"],
+    Immunology: ["Immunology"],
+    InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+    InternalMedicine: ["General"],
+    "Mental Health": ["Mental Health"],
+    Neonatology: ["Neonatology", "Well babies"],
+    Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+    Neurosurgery: ["Neurosurgery"],
+    ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+    Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+    Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+    Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+    Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+    Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+    PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+    Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+    Pulmonology: ["Pulmonology"],
+    Rehabilitation: ["Rehabilitation"],
+    Rheumatology: ["Rheumatology"],
+    ScreeningClinic: ["ScreeningClinic"],
+    Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+    VascularSurgery: ["General", "Diabetic Foot"],
+    Other: ["Other"]
+  };
+
+  function updateClinics2() {
+const specialtySelect = document.getElementById("specialty2");
+const clinicSelect = document.getElementById("clinic2");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData2[selectedSpecialty]) {
+  clinicData2[selectedSpecialty].forEach(clinic => {
+    const option = document.createElement("option");
+    option.value = clinic;
+    option.textContent = clinic;
+    clinicSelect.appendChild(option);
+  });
+}
+}
+</script>
+
+
+
+
+
+
+
+
+
+
+<tr>
+<td>
+<select id="specialty3" onchange="updateClinics3()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic3">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData3 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics3() {
+const specialtySelect = document.getElementById("specialty3");
+const clinicSelect = document.getElementById("clinic3");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData3[selectedSpecialty]) {
+clinicData3[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+<tr>
+<td>
+<select id="specialty4" onchange="updateClinics4()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic4">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData4 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics4() {
+const specialtySelect = document.getElementById("specialty4");
+const clinicSelect = document.getElementById("clinic4");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData4[selectedSpecialty]) {
+clinicData4[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+<tr>
+<td>
+<select id="specialty5" onchange="updateClinics5()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic5">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData5 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics5() {
+const specialtySelect = document.getElementById("specialty5");
+const clinicSelect = document.getElementById("clinic5");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData5[selectedSpecialty]) {
+clinicData5[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+  
+<tr>
+<td>
+<select id="specialty6" onchange="updateClinics6()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic6">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData6 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics6() {
+const specialtySelect = document.getElementById("specialty6");
+const clinicSelect = document.getElementById("clinic6");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData6[selectedSpecialty]) {
+clinicData6[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+  
+<tr>
+<td>
+<select id="specialty7" onchange="updateClinics7()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic7">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData7 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics7() {
+const specialtySelect = document.getElementById("specialty7");
+const clinicSelect = document.getElementById("clinic7");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData7[selectedSpecialty]) {
+clinicData7[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+  
+<tr>
+<td>
+<select id="specialty8" onchange="updateClinics8()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic8">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData8 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics8() {
+const specialtySelect = document.getElementById("specialty8");
+const clinicSelect = document.getElementById("clinic8");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData8[selectedSpecialty]) {
+clinicData8[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+  
+<tr>
+<td>
+<select id="specialty9" onchange="updateClinics9()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic9">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData9 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics9() {
+const specialtySelect = document.getElementById("specialty9");
+const clinicSelect = document.getElementById("clinic9");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData9[selectedSpecialty]) {
+clinicData9[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+  
+<tr>
+<td>
+<select id="specialty10" onchange="updateClinics10()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic10">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData10 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics10() {
+const specialtySelect = document.getElementById("specialty10");
+const clinicSelect = document.getElementById("clinic10");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData10[selectedSpecialty]) {
+clinicData10[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+<tr>
+<td>
+<select id="specialty11" onchange="updateClinics11()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic11">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData11 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics11() {
+const specialtySelect = document.getElementById("specialty11");
+const clinicSelect = document.getElementById("clinic11");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData11[selectedSpecialty]) {
+clinicData11[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+<tr>
+<td>
+<select id="specialty12" onchange="updateClinics12()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic12">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData12 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics12() {
+const specialtySelect = document.getElementById("specialty12");
+const clinicSelect = document.getElementById("clinic12");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData12[selectedSpecialty]) {
+clinicData12[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+  
+
+
+
+
+<tr>
+  <td>
+
+
+<select id="specialty14" onchange="updateClinics14()">
+  <option value=""></option>
+  <option value="Anesthesia">Anesthesia</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="Dentistry">Dentistry</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Endocrinology">Endocrinology</option>
+  <option value="FamilyMedicine">Family Medicine</option>
+  <option value="Gastroenterology">Gastroenterology</option>
+  <option value="GeneralSurgery">General Surgery</option>
+  <option value="Hematology">Hematology</option>
+  <option value="Hepatology">Hepatology</option>
+  <option value="Immunology">Immunology</option>
+  <option value="InfectiousDiseases">Infectious Diseases</option>
+  <option value="InternalMedicine">Internal Medicine</option>
+  <option value="Mental Health">Mental Health</option>
+  <option value="Neonatology">Neonatology</option>
+  <option value="Neurology">Neurology</option>
+  <option value="Neurosurgery">Neurosurgery</option>
+  <option value="ObstetricsGynecology">Obstetrics & Gynecology</option>
+  <option value="Oncology">Oncology</option>
+  <option value="Ophthalmology">Ophthalmology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Otolaryngology">Otolaryngology</option>
+  <option value="Pediatrics">Pediatrics</option>
+  <option value="PediatricSurgery">Pediatric Surgery</option>
+  <option value="Psychiatry">Psychiatry</option>
+  <option value="Pulmonology">Pulmonology</option>
+  <option value="Rehabilitation">Rehabilitation</option>
+  <option value="Rheumatology">Rheumatology</option>
+  <option value="ScreeningClinic">Screening Clinic</option>
+  <option value="Urology">Urology</option>
+  <option value="VascularSurgery">Vascular Surgery</option>
+  <option value="Other">Other</option>
+</select>
+</td>
+
+<td>
+<select id="clinic14">
+  <option value=""></option>
+</select>
+</td>
+
+
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+<td><input type="text" /></td><td><input type="text" /></td>
+
+
+
+
+
+</tr>
+
+<script>
+const clinicData14 = {
+Anesthesia: ["General", "Palliative Care", "Pain Management"],
+Cardiology: ["Anticoagulation", "Ecocardiography", "Electrophysiology", "General"],
+Dentistry: ["Endodontics", "Orthodontics and Dentofacial Orthopedics", "Pediatric Dentistry", "Periodontics", "Preventive/General", "Prosthodontics", "Oral and Maxillofacial Surgery", "Other"],
+Dermatology: ["General", "Immunodermatology", "Laser Medicine", "Phototherapy"],
+Endocrinology: ["Diabetes", "General", "Pituitary Diseases"],
+FamilyMedicine: ["Family Medicine", "Chronic Diseases"],
+Gastroenterology: ["Gastroenterology"],
+GeneralSurgery: ["Bariatric Surgery", "Breast Surgery", "Colorectal Surgery", "General Surgery", "Hepatobiliary Surgery", "Oncology Surgery", "Transplant Surgery"],
+Hematology: ["Hematology"],
+Hepatology: ["Hepatology"],
+Immunology: ["Immunology"],
+InfectiousDiseases: ["General", "HIV", "Tuberculosis"],
+InternalMedicine: ["General"],
+"Mental Health": ["Mental Health"],
+Neonatology: ["Neonatology", "Well babies"],
+Neurology: ["Epilepsy", "General", "Multiple Sclerosis"],
+Neurosurgery: ["Neurosurgery"],
+ObstetricsGynecology: ["Gynecology", "Gynocologic Oncology", "Obstetrics", "Obstetrics & Gynecology- General", "Infertility", "Perinatology/Antenatal Care", "Ultrasonography"],
+Oncology: ["Breast Cancer", "General", "Radiation Oncology", "Palliative Care"],
+Ophthalmology: ["Anterior Segment Diseases/Cataract", "General", "NeuroOphthalmology", "Oculoplastics", "Retina/Vitreous", "Uveitis", "Glaucoma", "Refractive Management"],
+Orthopedics: ["Arthroplasty", "Foot and Ankle Surgery", "General", "Hand Surgery", "Hip and Pelvis Surgery", "Ortho-oncology", "Shoulder & Elbow Surgery", "Spine Surgery"],
+Otolaryngology: ["General", "Head and Neck", "Otology", "Rhinology"],
+Pediatrics: ["Pediatric Allergy and Immunology", "Developmental and Behavioral", "Pediatric Cardiology", "Pediatric Endocrinology - General", "Pediatric Endocrinology - Obesity", "Pediatric Gastroenterology", "Pediatric Hematology", "Pediatric Hematology & Oncology", "Pediatric Infectious Diseases", "Pediatric Metabolic and Genetic Diseases", "Pediatric Nephrology", "Pediatric Neurology", "Pediatric Ophthalmology - RoP", "Pediatric Psychiatry", "Pediatric Pulmonology", "Pediatric Rehabilitation", "Pediatric Rheumatology", "Pediatrics - Down Syndrome", "Pediatrics - General", "Pediatrics - Special Needs", "Other"],
+PediatricSurgery: ["Pediatric ENT", "Pediatric Neurosurgery", "Pediatric Ophthalmology/Strabismus", "Pediatric Orthopedics", "Pediatric Surgery", "Pediatric Urology"],
+Psychiatry: ["General", "Adult Psychology", "Neuropsychiatry"],
+Pulmonology: ["Pulmonology"],
+Rehabilitation: ["Rehabilitation"],
+Rheumatology: ["Rheumatology"],
+ScreeningClinic: ["ScreeningClinic"],
+Urology: ["Andrology", "Endourology", "Uro-oncology", "General"],
+VascularSurgery: ["General", "Diabetic Foot"],
+Other: ["Other"]
+};
+
+function updateClinics14() {
+const specialtySelect = document.getElementById("specialty14");
+const clinicSelect = document.getElementById("clinic14");
+const selectedSpecialty = specialtySelect.value;
+
+clinicSelect.innerHTML = '<option value=""></option>';
+
+if (clinicData14[selectedSpecialty]) {
+clinicData14[selectedSpecialty].forEach(clinic => {
+const option = document.createElement("option");
+option.value = clinic;
+option.textContent = clinic;
+clinicSelect.appendChild(option);
+});
+}
+}
+</script>
+  
+
+
+
+
+
+
+
+
+
+</table>
+
+<script>
+  function addClinicField() {
+    const table = document.getElementById("clinicTable");
+    const newRow = document.createElement("tr");
+
+    newRow.innerHTML = `
+      <td>
+        <select onchange="handleSpecialtyChange(this)">
+          <option value=""></option>
+          <option value="Anesthesia">Anesthesia</option>
+          <option value="Cardiology">Cardiology</option>
+          <option value="Dentistry">Dentistry</option>
+          <option value="Dermatology">Dermatology</option>
+          <option value="Endocrinology">Endocrinology</option>
+          <option value="Family Medicine">Family Medicine</option>
+          <option value="Gastroenterology">Gastroenterology</option>
+          <option value="General Surgery">General Surgery</option>
+          <option value="Hematology">Hematology</option>
+          <option value="Internal Medicine">Internal Medicine</option>
+          <option value="Nephrology">Nephrology</option>
+          <option value="Neurology">Neurology</option>
+          <option value="Obstetrics and Gynecology">Obstetrics and Gynecology</option>
+          <option value="Oncology">Oncology</option>
+          <option value="Ophthalmology">Ophthalmology</option>
+          <option value="Orthopedics">Orthopedics</option>
+          <option value="Otolaryngology">Otolaryngology</option>
+          <option value="Pediatrics">Pediatrics</option>
+          <option value="Psychiatry">Psychiatry</option>
+          <option value="Pulmonology">Pulmonology</option>
+          <option value="Radiology">Radiology</option>
+          <option value="Rheumatology">Rheumatology</option>
+          <option value="Urology">Urology</option>
+          <option value="AddNew">+ Add new...</option>
+        </select>
+        <input type="text" placeholder="New Specialty" style="display:none;" onblur="saveNewSpecialty(this)" />
+      </td>
+
+      <td>
+        <select onchange="handleClinicChange(this)">
+          <option value=""></option>
+        </select>
+        <input type="text" placeholder="New Clinic" style="display:none;" onblur="saveNewClinic(this)" />
+      </td>
+
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+            <td><input type="text" /></td><td><input type="text" /></td>
+
+    `;
+    
+    table.appendChild(newRow);
+  }
+
+  const clinicData13 = {
+    Anesthesia: ["General", "Palliative Care", "Pain Management"],
+    Cardiology: ["Anticoagulation", "Echocardiography", "Electrophysiology", "General"],
+    Dentistry: ["Endodontics", "Orthodontics", "General"],
+    Dermatology: ["General", "Laser", "Cosmetic"],
+    Endocrinology: ["Diabetes", "Thyroid", "Hormonal Disorders"],
+    "Family Medicine": ["General Practice"],
+    Gastroenterology: ["Endoscopy", "Liver Clinic", "General"],
+    "General Surgery": ["Breast Clinic", "Hernia", "Colorectal"],
+    Hematology: ["Anemia", "Leukemia", "Coagulation Disorders"],
+    "Internal Medicine": ["Diabetes", "Hypertension", "Cholesterol"],
+    Nephrology: ["Dialysis", "Kidney Stones", "Transplant Follow-up"],
+    Neurology: ["Epilepsy", "Headache", "Stroke"],
+    "Obstetrics and Gynecology": ["Antenatal", "Infertility", "Menopause"],
+    Oncology: ["Chemotherapy", "Follow-up", "Palliative"],
+    Ophthalmology: ["Retina", "Glaucoma", "Pediatrics"],
+    Orthopedics: ["Fractures", "Spine", "Joints"],
+    Otolaryngology: ["ENT", "Audiology", "Sinus"],
+    Pediatrics: ["Vaccination", "Growth & Development", "General"],
+    Psychiatry: ["Depression", "Anxiety", "Addiction"],
+    Pulmonology: ["Asthma", "COPD", "Sleep Apnea"],
+    Radiology: ["Ultrasound", "MRI", "CT Scan"],
+    Rheumatology: ["Arthritis", "Lupus", "Vasculitis"],
+    Urology: ["Stones", "Incontinence", "Prostate"]
+    
+  };
+
+  function handleSpecialtyChange(selectElement) {
+    const newInput = selectElement.parentElement.querySelector("input");
+    const selectedValue = selectElement.value;
+    if (selectedValue === "AddNew") {
+      newInput.style.display = "inline-block";
+      newInput.focus();
+    } else {
+      newInput.style.display = "none";
+      updateClinics(selectElement, selectedValue);
+    }
+  }
+
+  function saveNewSpecialty(inputElement) {
+    const specialtySelect = inputElement.parentElement.querySelector("select");
+    const newSpecialty = inputElement.value.trim();
+    if (newSpecialty) {
+      const option = new Option(newSpecialty, newSpecialty);
+      specialtySelect.add(option, specialtySelect.options.length - 1);
+      specialtySelect.value = newSpecialty;
+      clinicData[newSpecialty] = [];
+      updateClinics(specialtySelect, newSpecialty);
+    }
+    inputElement.value = "";
+    inputElement.style.display = "none";
+  }
+
+  function updateClinics(specialtySelect, specialty) {
+    const clinicSelect = specialtySelect.parentElement.nextElementSibling.querySelector("select");
+    const newClinicInput = specialtySelect.parentElement.nextElementSibling.querySelector("input");
+    clinicSelect.innerHTML = '<option value=""></option>';
+    if (clinicData[specialty]) {
+      clinicData[specialty].forEach(clinic => {
+        const option = new Option(clinic, clinic);
+        clinicSelect.add(option);
+      });
+    }
+    clinicSelect.add(new Option("+ Add new...", "AddNew"));
+    newClinicInput.style.display = "none";
+  }
+
+  function handleClinicChange(selectElement) {
+    const newInput = selectElement.parentElement.querySelector("input");
+    if (selectElement.value === "AddNew") {
+      newInput.style.display = "inline-block";
+      newInput.focus();
+    } else {
+      newInput.style.display = "none";
+    }
+  }
+
+  function saveNewClinic(inputElement) {
+    const clinicSelect = inputElement.parentElement.querySelector("select");
+    const specialtySelect = inputElement.parentElement.previousElementSibling.querySelector("select");
+    const newClinic = inputElement.value.trim();
+    const specialty = specialtySelect.value;
+    if (newClinic && specialty) {
+      if (!clinicData[specialty]) {
+        clinicData[specialty] = [];
+      }
+      clinicData[specialty].push(newClinic);
+      updateClinics(specialtySelect, specialty);
+      clinicSelect.value = newClinic;
+    }
+    inputElement.value = "";
+    inputElement.style.display = "none";
+  }
+</script>
+
+<tr>
+  <td><button onclick="addClinicField()">➕</button></td>
+</tr>
+  </table>
+  
+ 
+  <div class="button-container">
+    <button onclick="saveData()">Save Data</button>
+  </div>
+  
+</body>
+</html>

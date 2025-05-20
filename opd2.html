@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { background-color: #ddd; font-family: Arial, sans-serif; }
+    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+    th, td { border: 1px solid #000; padding: 6px; text-align: center; }
+    th { background-color: #c2e0c6; font-weight: bold; }
+    .highlight-yellow { background-color: #ffff99; }
+    .highlight-green { background-color: #c2e0c6; }
+    .readonly { background-color: #f1f1f1; border: none; padding: 6px; text-align: center; }
+    .button-container { display: flex; justify-content: flex-end; gap: 10px; padding: 10px; margin: 0; }
+    .navbar {
+            background-color:white;
+    padding: 10px;
+    color: black;
+    
+    top: 10px;
+    /*left: 270px;*/
+    left: 130px;
+    right: 10px;
+    z-index: 1001;
+            box-shadow: 0 15px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+        }
+
+        .navbar h2 {
+            margin: 0;
+    text-align: center;
+    font-size: 40px;
+    flex-grow: 1; 
+        }
+  
+
+  </style>
+</head>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+function downloadTableAsPDF() {
+  const table = document.getElementById("clinicTable");
+  const selectedYear = document.getElementById("yearSelect").value;
+
+  if (!table || !selectedYear) {
+    alert("يرجى اختيار السنة أولاً.");
+    return;
+  }
+
+  const clone = table.cloneNode(true);
+
+  const container = document.createElement("div");
+  container.style.position = "relative";
+  container.style.padding = "20px";
+  container.style.width = "100%";
+  container.style.minHeight = "100vh";
+  container.style.boxSizing = "border-box";
+  container.style.backgroundImage = "url('images/404.jpg')";
+  container.style.backgroundSize = "cover";
+  container.style.backgroundRepeat = "no-repeat";
+  container.style.backgroundPosition = "center";
+
+  const title = document.createElement("h2");
+  title.textContent = "OPD - " + selectedYear;
+  title.style.textAlign = "center";
+  title.style.marginBottom = "20px";
+  title.style.position = "relative";
+  title.style.color = "#000";
+
+  container.appendChild(title);
+
+  clone.style.marginTop = "200px";
+  container.appendChild(clone);
+
+  const imagesDiv = document.createElement("div");
+  imagesDiv.style.display = "flex";
+  imagesDiv.style.justifyContent = "center";
+  imagesDiv.style.marginTop = "20px";
+  imagesDiv.style.gap = "20px";
+
+  const img1 = document.createElement("img");
+  img1.src = "images/k.jpg";
+  img1.style.width = "300px";
+  img1.style.height = "auto";
+  img1.style.position = "absolute";
+  img1.style.top = "0";
+  img1.style.right = "0";
+  img1.style.margin = "10px";
+
+  imagesDiv.appendChild(img1);
+  container.appendChild(imagesDiv);
+
+  const bottomLeftImg = document.createElement("img");
+  bottomLeftImg.src = "images/2025.jpg";
+  bottomLeftImg.style.width = "500px";
+  bottomLeftImg.style.position = "absolute";
+bottomLeftImg.style.bottom = "-200px";
+  bottomLeftImg.style.left = "10px";
+  bottomLeftImg.style.zIndex = "10";
+  container.appendChild(bottomLeftImg);
+
+ const bottomRightText = document.createElement("div");
+bottomRightText.textContent = "Source:Performance Development department";
+bottomRightText.style.position = "absolute";
+bottomRightText.style.bottom = "-200px";
+bottomRightText.style.right = "10px";
+bottomRightText.style.fontSize = "16px";
+bottomRightText.style.color = "rgba(128, 128, 128, 0.5)";
+bottomRightText.style.backgroundColor = "transparent";
+bottomRightText.style.padding = "5px 10px";
+bottomRightText.style.borderRadius = "5px";
+bottomRightText.style.zIndex = "10";
+container.appendChild(bottomRightText);
+
+const bottomRightText2 = document.createElement("div");
+bottomRightText2.textContent = "Contact : 1588";
+bottomRightText2.style.position = "absolute";
+bottomRightText2.style.bottom = "-170px";
+bottomRightText2.style.right = "10px";
+bottomRightText2.style.fontSize = "16px";
+bottomRightText2.style.color = "rgba(128, 128, 128, 0.5)";
+bottomRightText2.style.backgroundColor = "transparent";
+bottomRightText2.style.padding = "5px 10px";
+bottomRightText2.style.borderRadius = "5px";
+bottomRightText2.style.zIndex = "10";
+container.appendChild(bottomRightText2);
+
+const bottomRightText3 = document.createElement("div");
+bottomRightText3.textContent = "At King Saud Hospital Unayzah";
+bottomRightText3.style.position = "absolute";
+bottomRightText3.style.bottom = "-140px";
+bottomRightText3.style.right = "10px";
+bottomRightText3.style.fontSize = "16px";
+bottomRightText3.style.color = "rgba(128, 128, 128, 0.5)";
+bottomRightText3.style.backgroundColor = "transparent";
+bottomRightText3.style.padding = "5px 10px";
+bottomRightText3.style.borderRadius = "5px";
+bottomRightText3.style.zIndex = "10";
+container.appendChild(bottomRightText3);
+  const dateDiv = document.createElement("div");
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+  dateDiv.textContent = today;
+  dateDiv.style.position = "absolute";
+  dateDiv.style.top = "10px";
+  dateDiv.style.left = "10px";
+  dateDiv.style.fontSize = "30px";
+  dateDiv.style.color = "#000";
+  dateDiv.style.backgroundColor = "transparent";
+  dateDiv.style.padding = "5px 10px";
+  dateDiv.style.borderRadius = "5px";
+
+  container.appendChild(dateDiv);
+
+  container.style.transform = "scale(0.8)";
+  container.style.transformOrigin = "top left";
+  container.style.width = "125%";
+
+  const opt = {
+    margin: 0,
+    filename: 'OPD' + selectedYear + '.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 1,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: document.documentElement.scrollHeight
+    },
+    jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+  };
+
+  html2pdf().set(opt).from(container).save();
+}
+
+</script>
+
+<body>
+ <div class="navbar">
+        <h2>OPD</h2>
+        <div class="button-container">
+            <select id="yearSelect">
+                <option value="">Year</option>
+                
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="2030">2030</option>
+
+                
+            </select>
+<button class="download-pdf-btn" onclick="downloadTableAsPDF()">تحميل PDF</button>
+
+            
+        </div>
+    </div>
+
+  <table id="clinicTable">
+    <thead>
+      <tr>
+        <th>Speciality</th>
+        <th>Sub-speciality</th>
+        <th class="highlight-yellow">January</th>
+        <th class="highlight-yellow">February</th>
+        <th class="highlight-yellow">March</th>
+        <th class="highlight-yellow">April</th>
+        <th class="highlight-yellow">May</th>
+        <th class="highlight-yellow">June</th>
+        <th class="highlight-yellow">July</th>
+        <th class="highlight-yellow">August</th>
+        <th class="highlight-yellow">September</th>
+        <th class="highlight-yellow">October</th>
+        <th class="highlight-yellow">November</th>
+        <th class="highlight-yellow">December</th>
+      </tr>
+      <tr>
+        <td></td>
+        <td></td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+        <td class="highlight-green">Utilization</td>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfXcvzduFgPsOzfpRG4CA29SnlqY9-JYM",
+      authDomain: "project-6371601637646468923.firebaseapp.com",
+      projectId: "project-6371601637646468923",
+      storageBucket: "project-6371601637646468923.firebasestorage.app",
+      messagingSenderId: "499579951191",
+      appId: "1:499579951191:web:e65cb41339b98e957dab12"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    document.getElementById('yearSelect').addEventListener('change', () => {
+      const selectedYear = document.getElementById('yearSelect').value;
+      if (selectedYear === "Year") return;
+
+      const dbRef = ref(database);
+      get(child(dbRef, `statistics/${selectedYear}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          loadTableData(data.tables);
+        } else {
+          alert("No data found for this year.");
+        }
+      });
+    });
+
+  function applyColor(cell, value) {
+  value = parseFloat(value);
+  if (!isNaN(value)) {
+   if (value >= 90 && value <= 100) {
+      cell.style.backgroundColor = '#007bff';
+      cell.style.color = 'white';
+    } else if (value >= 80 && value < 90) {
+      cell.style.backgroundColor = '#77DD77';
+      cell.style.color = 'white';
+    } else if (value >= 70 && value < 80) {
+      cell.style.backgroundColor = '#F7DC6F';
+      cell.style.color = 'black';
+    } else if (value < 70) {
+      cell.style.backgroundColor = 'red';
+      cell.style.color = 'white';
+    }
+  } else {
+    cell.style.backgroundColor = '';
+    cell.style.color = '';
+  }
+}
+
+function loadTableData(tables) {
+  const tbody = document.querySelector("#clinicTable tbody");
+  tbody.innerHTML = "";
+
+  tables.forEach(tableData => {
+    const dataRows = tableData.rows.slice(2); 
+
+    dataRows.forEach(row => {
+      const tr = document.createElement("tr");
+      row.values.forEach(value => {
+        const td = document.createElement("td");
+        const div = document.createElement("div");
+        div.className = "readonly";
+        div.textContent = value;
+
+        applyColor(div, value); 
+
+        td.appendChild(div);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+  </script>
+</body>
+</html>

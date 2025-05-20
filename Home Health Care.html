@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+                        background-color: #ddd;
+
+            /*background-image: linear-gradient(#348CD2, #FFFFFF, #348CD2), url('../images/0.jpg'); */
+            margin: 0;
+            display: flex;
+        }
+        .content {
+            margin: 80px auto;
+            width: 90%;
+            text-align: center;
+        }
+
+        select, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+            color: #4fa3c6; 
+            border-radius: 5px;
+
+        }
+
+        .top-bar {
+    background-color:white;
+    padding: 15px;
+    color: #4fa3c6; 
+    display: flex;
+    align-items: center;
+    justify-content: space-between; 
+    position: fixed;
+    top: 10px;
+    left: 270px;
+    left: 130px;
+    right: 10px;
+    z-index: 1001;
+    border-radius: 20px;
+            box-shadow: 0 15px 15px rgba(0, 0, 0, 0.2);
+
+    
+}
+
+.top-bar h1 {
+    margin: 0;
+    text-align: center;
+    font-size: 40px;
+    flex-grow: 1; 
+}
+
+.select-container {
+    display: flex;
+    justify-content: flex-end; 
+    width: 100%;
+    
+}
+
+.sidebar-container {
+    display: flex;
+    position: fixed;
+    left: 10px;
+    top: 15px;
+    bottom: 30px; 
+    height: calc(100vh - 40px); 
+    background-color: white;
+    border-radius: 20px; 
+    overflow: hidden;
+    width: 90px;
+            box-shadow: 0 15px 15px rgba(0, 0, 0, 0.2);
+
+}
+
+.narrow-sidebar {
+    width: 60px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    
+}
+
+        .narrow-sidebar .icon {
+            font-size: 40px;
+            margin: 20px 0;
+           color:#4fa3c6; 
+            transition: color 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            
+        }
+
+        .narrow-sidebar .icon:hover {
+            color: #4fa3c6; 
+            
+        }
+
+        .wide-sidebar {
+    width: 150px;
+    background-color:#4fa3c6; 
+    color: #ddd;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+        .wide-sidebar h2 { 
+            margin-bottom: 20px; 
+            font-size: 22px; 
+        }
+
+        .wide-sidebar a {
+            color:  white;
+            text-decoration: none;
+            padding: 10px 0;
+            display: block;
+            transition: background 0.3s;
+        }
+
+        .wide-sidebar a:hover { 
+            background: rgba(255, 255, 255, 0.2); 
+        }
+
+        table {
+            width: 95%;
+            margin: 40px auto;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            border-radius: 50px;
+            
+    overflow: hidden;
+
+            
+            
+        }
+
+        th, td {
+            padding: 10px 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+            
+        }
+
+        th {
+            background-color: #4fa3c6; 
+            color: white;
+        }
+
+        th:first-child, td:first-child {
+            width: 500px; 
+            word-wrap: break-word;
+        }
+
+        .content {
+            margin-left: 150px; 
+            margin-right: 45px; 
+
+            margin-top: 100px; 
+            width: calc(100% - 210px);
+            padding: 20px;
+        }
+
+
+
+
+        .benchmark-input {
+    width: 80%;
+    padding: 5px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    background-color: #f9f9f9;
+}
+
+.benchmark-input:focus {
+    outline: none;
+    border-color:  #a6d3e7;
+    background-color: #fff;
+}
+#summaryTable td:first-child {
+  background-color: #a6d3e7; 
+  font-weight: bold; 
+  }
+
+    </style>
+</head>
+<body>
+    
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+<script>
+  function downloadTableAsPDF() {
+    const table = document.getElementById("summaryTable");
+    const selectedYear = document.getElementById("yearSelect").value;
+
+    if (!table || !selectedYear) {
+      alert("يرجى اختيار السنة أولاً.");
+      return;
+    }
+
+    const clone = table.cloneNode(true);
+
+    const container = document.createElement("div");
+    const title = document.createElement("h2");
+    title.textContent = "Home Health Care - " + selectedYear;
+    title.style.textAlign = "center";
+    title.style.marginBottom = "20px";
+
+    container.appendChild(title);
+    container.appendChild(clone);
+
+    const opt = {
+      margin: 0.5,
+      filename: 'Home_Health_Care_' + selectedYear + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(container).save();
+  }
+</script>
+
+
+
+  
+    <div class="sidebar-container">
+        <div class="narrow-sidebar">
+            <a href="login.html" class="icon"><i class="bi bi-person"></i></a>
+            <a href="index2.html" class="icon"><i class="bi bi-house-door"></i></a>
+            <a href="Home Health Care1.html" class="icon"><i class="bi bi-table"></i></a>
+            <a href="Home Health Care3.html" class="icon"><i class="bi bi-bar-chart-line"></i></a>
+              <a href="#" class="icon" onclick="downloadTableAsPDF()"><i class="bi bi-save"></i></a>
+        </div>
+        <!--<div class="wide-sidebar">
+            <h2>CLINIC</h2>
+            <a href="">Emergency</a>
+            <a href="#">Operating Room</a>
+            <a href="#">Laboratory</a>
+            <a href="#">Blood Bank</a>
+            <a href="">Radiology</a>
+            <a href="Diabetes.html" onclick="loadIframe()">Diabetes Center</a>   
+            <a href="health1.html">Home Health Care</a>
+        </div>-->
+    </div>
+    
+
+    <div class="top-bar">
+        <h1>Home Health Care</h1>
+        <select id="yearSelect" onchange="loadSummaryTable()">
+            <option value=""> Year</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+            <option value="2029">2029</option>
+            <option value="2030">2030</option>
+
+
+
+        </select>
+    </div>
+
+    <div class="content">
+
+        <div id="averagesDisplay"></div>
+
+        <table id="summaryTable">
+            <thead>
+                <tr>
+                    <th>KPI</th>
+                    <th>January</th>
+                    <th>February</th>
+                    <th>March</th>
+                    <th>April</th>
+                    <th>May</th>
+                    <th>June</th>
+                    <th>July</th>
+                    <th>August</th>
+                    <th>September</th>
+                    <th>October</th>
+                    <th>November</th>
+                    <th>December</th>
+                    <th>AVG</th>
+                    <th>BENCHMARK 
+
+                        
+                    </th>
+
+
+                </tr>
+
+            </thead>
+            <tbody></tbody>
+        </table>
+        <button onclick="saveToFirebase()">Save</button>
+
+    </div>
+
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+       
+    
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+// TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyB0CTKljgsKJNQ4k6aUIO-JxFaBWa5IoYE",
+          authDomain: "sultanah-9cee3.firebaseapp.com",
+          projectId: "sultanah-9cee3",
+          storageBucket: "sultanah-9cee3.firebasestorage.app",
+          messagingSenderId: "890296989215",
+          appId: "1:890296989215:web:fb00799d2b70590466872a"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+      
+window.saveToFirebase = function () {
+    const year = document.getElementById('yearSelect').value;
+    if (!year) {
+        alert("Please select a year.");
+        return;
+    }
+
+    let table = document.getElementById('summaryTable');
+    let data = {};
+
+    for (let i = 1; i < table.rows.length; i++) {
+        let row = table.rows[i];
+        let kpi = row.cells[0].textContent.trim();
+        data[kpi] = {};
+
+        let months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        for (let j = 1; j <= 12; j++) {
+            let cell = row.cells[j];
+            data[kpi][months[j - 1]] = {
+                value: cell.textContent.trim(),
+                backgroundColor: cell.style.backgroundColor || '',
+                textColor: cell.style.color || ''
+            };
+        }
+
+        let avgCell = row.cells[13];
+        data[kpi]["Average"] = {
+            value: avgCell.textContent.trim(),
+            backgroundColor: avgCell.style.backgroundColor || '',
+            textColor: avgCell.style.color || ''
+            
+        };
+
+        let benchmarkCell = row.cells[14];
+        data[kpi]["Benchmark"] = {
+            value: benchmarkCell.textContent.trim(),
+            backgroundColor: benchmarkCell.style.backgroundColor || '',
+            textColor: benchmarkCell.style.color || ''
+        };
+    }
+
+    set(ref(db, 'kpi_data/' + year), data)
+        .then(() => {
+            alert("Data saved successfully to Firebase!");
+            window.location.href = 'Home Health Care1.html';
+        })
+        .catch((error) => {
+            console.error("Save failed:", error);
+            alert("Failed to save data to Firebase.");
+        });
+};
+
+      </script>
+
+
+    <script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   /* function save() {
+        let year = document.getElementById('yearSelect').value;
+        if (!year) {
+            alert("Please select a year.");
+            return;
+        }
+
+        localStorage.setItem('selectedYear', year);
+        
+
+        let table = document.getElementById('summaryTable');
+        let data = [];
+
+        for (let i = 1; i < table.rows.length; i++) {
+            let row = table.rows[i];
+            let rowData = [];
+
+            for (let j = 1; j < row.cells.length - 1; j++) {
+                rowData.push(row.cells[j].textContent.trim());
+            }
+
+            data.push(rowData);
+        }
+
+        let allData = JSON.parse(localStorage.getItem('savedTableData')) || {};
+        allData[year] = data;
+
+        localStorage.setItem('savedTableData', JSON.stringify(allData));
+        
+
+        window.location.href = 'Health2.html';
+        
+    }*/
+
+
+
+
+
+
+
+
+
+    
+    function loadSummaryTable() {
+        let year = document.getElementById('yearSelect').value;
+        let tableBody = document.getElementById('summaryTable').querySelector('tbody');
+        tableBody.innerHTML = '';
+
+        let kpis = [
+            "KPI1: Nurse to Patient Ratio",
+            "KPI 2: HHC team to Patient Ratio",
+            "KPI 3: % of Patients with their first visit within one working week of accepteance at HHC",
+            "KPI 4: No show rate",
+            "KPI 5: % of Unplanned patients readmitted",
+            "KPI 6: % of Pressure Injuries",
+            "KPI 7: HHC Patient Referral Acceptance Rate",
+            "KPI 8: % of Elderly Patients with Comprehensive Assessment",
+            "HHC Service Growth Rate",
+            "% of daily Efficiency of HHC team"
+        ];
+
+        let storedData = JSON.parse(localStorage.getItem('monthlyAverages')) || {};
+
+        kpis.forEach((kpi, index) => {
+            let row = document.createElement('tr');
+            let cellKpi = document.createElement('td');
+            cellKpi.textContent = kpi;
+            row.appendChild(cellKpi);
+
+            let total = 0, count = 0;
+            let monthCells = [];
+
+            let months = [
+                "January", "February", "March", "April", "May", "June", 
+                "July", "August", "September", "October", "November", "December",
+            ];
+
+            months.forEach(month => {
+                let cell = document.createElement('td');
+                cell.contentEditable = true;
+                cell.dataset.kpi = kpi;
+                cell.dataset.month = month;
+                cell.dataset.year = year;
+
+                let value = storedData[year] && storedData[year][month] && storedData[year][month][kpi] ? storedData[year][month][kpi] : '';
+                cell.textContent = value;
+
+                setMonthColor(cell, value, kpi);
+                if (value !== '' && !isNaN(parseFloat(value))) {
+                    total += parseFloat(value);
+                    count++;
+                }
+
+                cell.addEventListener('input', function() {
+                    saveData(cell);
+                    updateAverage(row, monthCells, index);
+                });
+
+                row.appendChild(cell);
+                monthCells.push(cell);
+            });
+
+            let avgCell = document.createElement('td');
+let avg = count > 0 ? (total / count).toFixed(4) : '';
+avgCell.textContent = avg;
+
+set(avgCell, avg, index); 
+
+avgCell.classList.add('avg-cell');
+row.appendChild(avgCell);
+
+
+            row.appendChild(avgCell);
+            let benchmarkCell = document.createElement('td');
+            benchmarkCell.contentEditable = true;
+            benchmarkCell.dataset.kpi = kpi;
+            benchmarkCell.dataset.year = year;
+            benchmarkCell.textContent = getBenchmarkValue(kpi);
+            row.appendChild(benchmarkCell);
+            tableBody.appendChild(row);
+            
+        });
+    }
+
+
+
+    function saveData(cell) {
+        let year = cell.dataset.year;
+        let month = cell.dataset.month;
+        let kpi = cell.dataset.kpi;
+        let value = cell.textContent.trim();
+
+        let storedData = JSON.parse(localStorage.getItem('monthlyAverages')) || {};
+        if (!storedData[year]) {
+            storedData[year] = {};
+        }
+        if (!storedData[year][month]) {
+            storedData[year][month] = {};
+        }
+        storedData[year][month][kpi] = value;
+
+        localStorage.setItem('monthlyAverages', JSON.stringify(storedData));
+
+        setMonthColor(cell, value, kpi)  
+    
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    
+
+    function setMonthColor(cell, value, kpi) {
+    console.log("KPI:", kpi, "Value:", value); 
+    if (value === '' || value === null) {
+        cell.style.backgroundColor = '';
+        cell.style.color = '';
+    } else {
+        value = parseFloat(value);
+        if (isNaN(value)) {
+            return;
+        }
+
+        if (kpi === "KPI1: Nurse to Patient Ratio") {
+            if (value >= 0.033) {
+                cell.style.backgroundColor = '#007bff'; 
+                cell.style.color = 'white';
+            } else if (value < 0.033 && value> 0.025) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value <= 0.025 &&value> 0.017) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'black';
+            } else if (value <= 0.017) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'white';
+            }
+        }
+
+        if (kpi === "KPI 2: HHC team to Patient Ratio") {
+            if (value >= 0.017) {
+                cell.style.backgroundColor = '#007bff'; 
+                cell.style.color = 'white';
+            } else if (value < 0.017 && value > 0.013) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value <= 0.013 && value > 0.008) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'black';
+            } else if (value < 0.008) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'white';
+            }
+        }if (kpi === "KPI 3: % of Patients with their first visit within one working week of accepteance at HHC") {
+            if (value = 1.0) {
+                cell.style.backgroundColor = '#007bff'; 
+                cell.style.color = 'white';
+            } else if (value >= 0.9 && value <1.0) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value >= 0.7 && value< 0.9) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'black';
+            } else if (value < 0.7) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'white';
+            }
+        }if (kpi === "KPI 4: No show rate") {
+            if (value >= 0.10) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value> 0.05 && value< 0.10) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'white';
+            } else if (value <= 0.05) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'black';
+            } 
+        }if (kpi === "KPI 5: % of Unplanned patients readmitted") {
+            if (value > 0.05) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value  > 0.03 && value <= 0.05) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'white';
+            } else if (value === 0.5) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'white';
+            } 
+        }if (kpi === "KPI 6: % of Pressure Injuries") {
+            if (value <= 0.05) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value > 0.05 && value <= 0.10) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'white';
+            } else if (value > 0.10) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'white';
+            } else if (value < 0.5) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'white';
+            }
+        }if (kpi === "KPI 7: HHC Patient Referral Acceptance Rate") {
+            if (value >= 0.93) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value >= 0.80 && value < 0.93) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'white';
+            } else if (value< 0.80) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'black';
+            } 
+        }if (kpi === "KPI 8: % of Elderly Patients with Comprehensive Assessment") {
+            if (value >= 0.80) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value >= 0.60 && value< 0.80) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'white';
+            } else if (value < 0.60) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'white';
+            } 
+        }if (kpi === "HHC Service Growth Rate") {
+            if (value >= 0.90) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value >= 0.70 && value < 0.90) {
+                cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'white';
+            } else if (value < 0.70) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'black';
+            } 
+        }if (kpi === "% of daily Efficiency of HHC team") {
+            if (value >= 2) {
+                cell.style.backgroundColor = '#007bff'; 
+                cell.style.color = 'white';
+            } else if (value === 1) {
+                cell.style.backgroundColor = '#77DD77'; 
+                cell.style.color = 'white';
+            } else if (value === 0.5) {
+                 cell.style.backgroundColor = 'yellow'; 
+                cell.style.color = 'black';
+            } else if (value < 0.5) {
+                cell.style.backgroundColor = 'red'; 
+                cell.style.color = 'white';
+            }
+        }
+    }
+}
+                      
+
+
+    
+   
+    function getBenchmarkValue(kpi) {
+        let benchmarks = {
+            "KPI1: Nurse to Patient Ratio": 0.003,
+            "KPI 2: HHC team to Patient Ratio": 0.017,
+            "KPI 3: % of Patients with their first visit within one working week of accepteance at HHC":"100%",
+            "KPI 4: No show rate": "5%",
+            "KPI 5: % of Unplanned patients readmitted": "0%",
+            "KPI 6: % of Pressure Injuries": "0%",
+            "KPI 7: HHC Patient Referral Acceptance Rate":"100%",
+            "KPI 8: % of Elderly Patients with Comprehensive Assessment": "100%",
+            "HHC Service Growth Rate":"100%",
+            "% of daily Efficiency of HHC team":"100%"
+
+        };
+
+        return benchmarks[kpi] || '';
+    }
+
+    loadSummaryTable();
+
+    function updateAverage(row, monthCells, index) {
+        let total = 0, count = 0;
+        monthCells.forEach(cell => {
+            let value = cell.textContent.trim();
+            if (value !== '' && !isNaN(parseFloat(value))) {
+                total += parseFloat(value);
+                count++;
+            }
+        });
+
+        let avgCell = row.querySelector('.avg-cell');
+        let avg = count > 0 ? (total / count).toFixed(4) : '';
+        avgCell.textContent = avg;
+        set(avgCell, avg, index);
+    }
+
+
+    function set(cell, avg, index) {
+    if (avg === '' || avg === null) {
+        cell.style.backgroundColor = '';
+        cell.style.color = '';
+        return;
+    }
+    
+    avg = parseFloat(avg);
+    if (isNaN(avg)) return;
+    
+    cell.style.backgroundColor = '';
+    
+    if (index === 0) { 
+        if (avg >= 0.033) {
+            cell.style.backgroundColor = '#007bff'; 
+            cell.style.color = 'white';
+        } else if (avg < 0.033 && avg > 0.025) {
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg <= 0.025 && avg > 0.017) {
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 1) { 
+        if (avg >= 0.017) {
+            cell.style.backgroundColor = '#007bff'; 
+            cell.style.color = 'white';
+        } else if (avg < 0.017 && avg > 0.013) {
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg <= 0.013 && avg > 0.008) {
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 2) { 
+        if (avg === 1.0) {
+            cell.style.backgroundColor = '#007bff'; 
+            cell.style.color = 'white';
+        } else if (avg >= 0.9 && avg < 1.0) {
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg >= 0.7 && avg < 0.9) {
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 3) { 
+        if (avg >= 0.10) {
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg > 0.05 && avg < 0.10) {
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 4) { 
+        if (avg > 0.05) { 
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg > 0.03 && avg <= 0.05) { 
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 5) { 
+        if (avg <= 0.05) { 
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg > 0.05 && avg <= 0.10) { 
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 6) { 
+        if (avg >= 0.93) { 
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg >= 0.80 && avg < 0.93) { 
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 7) { 
+        if (avg >= 0.80) { 
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg >= 0.60 && avg < 0.80) { 
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 8) { 
+        if (avg >= 0.90) { 
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg >= 0.70 && avg < 0.90) { 
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    } else if (index === 9) { 
+        if (avg === 1.0) { 
+            cell.style.backgroundColor = '#007bff'; 
+            cell.style.color = 'white';
+        } else if (avg >= 0.90 && avg <= 1.0) { 
+            cell.style.backgroundColor = '#77DD77'; 
+            cell.style.color = 'white';
+        } else if (avg >= 0.70 && avg < 0.90) { 
+            cell.style.backgroundColor = 'yellow'; 
+            cell.style.color = 'black';
+        } else {
+            cell.style.backgroundColor = 'red'; 
+            cell.style.color = 'white';
+        }
+    }
+}
+
+
+
+    document.addEventListener("DOMContentLoaded", function() {
+        loadSummaryTable();
+    });
+
+
+
+    
+</script>
+
+     
+<script type="module" src="health.js"></script>
+
+     
+</body>
+</html>

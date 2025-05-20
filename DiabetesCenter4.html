@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .charts-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      padding: 20px;
+    }
+
+    .kpi-row {
+      width: 45%;
+      margin: 10px;
+      box-sizing: border-box;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 300px;
+      margin-top: 20px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="button-container">
+    <select id="yearSelect">
+      <option value="">year</option>
+      <option value="2023">2023</option>
+      <option value="2024">2024</option>
+      <option value="2025">2025</option>
+      <option value="2026">2026</option>
+      <option value="2027">2027</option>
+      <option value="2028">2028</option>
+      <option value="2029">2029</option>
+      <option value="2030">2030</option>
+    </select>
+        <button class="download-pdf-btn" onclick="downloadPageAsPDF()">تحميل PDF</button>
+
+  </div>
+
+  <div id="chartsContainer" class="charts-container"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+     const firebaseConfig = {
+            apiKey: "AIzaSyAK3WdokOB8tv2y1RKRLWEWO1J_-gij3E0",
+            authDomain: "ltgg-61e7d.firebaseapp.com",
+            projectId: "ltgg-61e7d",
+            storageBucket: "ltgg-61e7d.firebasestorage.app",
+            messagingSenderId: "88767682587",
+            appId: "1:88767682587:web:bbdbcda18b33fea76740be"
+        };
+    
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      let selectedYear = localStorage.getItem('selectedYear') || '';
+      document.getElementById('yearSelect').value = selectedYear;
+      if (selectedYear) loadCharts(selectedYear);
+
+      document.getElementById('yearSelect').addEventListener('change', function () {
+        selectedYear = this.value;
+        localStorage.setItem('selectedYear', selectedYear);
+        loadCharts(selectedYear);
+      });
+    });
+
+    let charts = [];
+
+    function loadCharts(year) {
+      const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+
+     const kpis = [
+      "1. Dialectologists to patient ratio",
+            "2. Clinical dietitian to patient ratio",
+            "3. Diabetes Educator Nurse to patient ratio",
+            "4. Foot Care Physicians to patient ratio",
+            "5. Clinic Productivity",
+            "6. No show rate",
+            "7. Waiting time for appointment",
+            "8. New Patient Ratio",
+            "9. Percentage of Patients Screened for Complications",
+            "10.Percentage of patients with HbA1c within the target",
+            "11.  Percentage of controlled patients who are referred to PHC",
+      ];
+
+      let container = document.getElementById('chartsContainer');
+      container.innerHTML = '';
+
+      const dbRef = ref(db, `kpi_data/${year}`);
+      get(dbRef).then(snapshot => {
+        if (snapshot.exists()) {
+          let data = snapshot.val();
+
+          kpis.forEach((kpi, index) => {
+            let chartData = [];
+            months.forEach(month => {
+              let value = data[kpi.replace(/\./g, "_")] && data[kpi.replace(/\./g, "_")][month]
+          ? parseFloat(data[kpi.replace(/\./g, "_")][month].value || data[kpi.replace(/\./g, "_")][month])
+          : 0;
+              chartData.push(isNaN(value) ? 0 : value);
+            });
+
+            let row = document.createElement('div');
+            row.classList.add('kpi-row');
+            row.innerHTML = `
+              <h3>${kpi}</h3>
+              <div class="chart-wrapper">
+                <canvas id="chart${index}"></canvas>
+              </div>
+            `;
+            container.appendChild(row);
+
+            let storedType = localStorage.getItem(`chartType${index}`) || 'bar';
+            let storedColor = localStorage.getItem(`chartColor${index}`) || '#4bc0c0';
+
+            let ctx = document.getElementById(`chart${index}`).getContext('2d');
+            const chartConfig = getChartConfig(storedType, chartData, storedColor);
+
+            charts[index] = new Chart(ctx, chartConfig);
+          });
+
+        } else {
+          container.innerHTML = "<p style='color: red;'>لا توجد بيانات للسنة المختارة في Firebase.</p>";
+        }
+      }).catch(error => {
+        console.error("Error fetching data from Firebase:", error);
+      });
+    }
+
+    function getChartConfig(type, data, color) {
+      return {
+        type: type,
+        data: {
+          labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+          datasets: [{
+            label: 'KPI Value',
+            data: data,
+            backgroundColor: color,
+            borderColor: color,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: 20
+          }
+        }
+      };
+    }
+  </script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+ <script>
+  function downloadPageAsPDF() {
+    const container = document.getElementById('chartsContainer');
+    const selectedYear = document.getElementById('yearSelect').value;
+
+    if (!container || !selectedYear) {
+      alert("يرجى اختيار السنة أولاً.");
+      return;
+    }
+
+    const containerClone = container.cloneNode(true);
+    const canvases = container.querySelectorAll('canvas');
+    const cloneCanvases = containerClone.querySelectorAll('canvas');
+
+    canvases.forEach((canvas, i) => {
+      const imgData = canvas.toDataURL();
+      const img = document.createElement('img');
+      img.src = imgData;
+      img.style.width = '100%';
+      img.style.height = 'auto';
+      cloneCanvases[i].replaceWith(img);
+    });
+
+    const titleDiv = document.createElement('div');
+    titleDiv.innerHTML = `<h2 style="text-align: center;">Diabetes Center- ${selectedYear}</h2>`;
+
+    const printable = document.createElement('div');
+    printable.appendChild(titleDiv);
+    printable.appendChild(containerClone);
+
+    const opt = {
+      margin: 0.5,
+      filename: `Diabetes Center${selectedYear}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(printable).save();
+  }
+</script>
+
+
+</body>
+</html>

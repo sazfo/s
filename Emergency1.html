@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background-color: #ddd;
+      font-family: Arial, sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background-color: #c2e0c6;
+      font-weight: bold;
+    }
+    .highlight-yellow {
+      background-color: #ffff99;
+    }
+    .title {
+      background-color: #f1c232;
+      font-weight: bold;
+      text-align: left;
+      padding: 10px;
+    }
+    input {
+      width: 100%;
+      border: none;
+      padding: 4px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .button-container {
+      display: flex;
+      justify-content: flex-end; 
+      gap: 10px; 
+      padding: 10px; 
+    }
+    .navbar {
+            background-color:white;
+    padding: 10px;
+    color: black;
+    
+    top: 10px;
+    /*left: 270px;*/
+    left: 130px;
+    right: 10px;
+    z-index: 1001;
+            box-shadow: 0 15px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+        }
+
+        .navbar h2 {
+            margin: 0;
+    text-align: center;
+    font-size: 40px;
+    flex-grow: 1; 
+        }
+  
+
+  </style>
+</head>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBF_CHMKyh289wahcRQQZiDofXKt-TxBUk",
+    authDomain: "project-1265774673794245454.firebaseapp.com",
+    projectId: "project-1265774673794245454",
+    storageBucket: "project-1265774673794245454.appspot.com",
+    messagingSenderId: "238627828375",
+    appId: "1:238627828375:web:4fe48e190113da113bafd2",
+    measurementId: "G-N88VDEL4B7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const database = getDatabase(app);
+
+  window.saveData = function() {
+    const year = document.getElementById('yearSelect').value;
+    const month = document.getElementById('monthSelect').value;
+
+    if (year === "Year" || month === "Month") {
+      alert("Please select both year and month.");
+      return;
+    }
+
+    const allTables = document.querySelectorAll("table");
+    const tableData = [];
+
+    allTables.forEach((table, index) => {
+      const rows = table.querySelectorAll("tr");
+      const rowData = [];
+
+      rows.forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll("td, th");
+        const cellData = [];
+        let rowKey = "row" + (rowIndex + 1);
+
+        cells.forEach((cell, cellIndex) => {
+          const input = cell.querySelector("input");
+          const value = input ? input.value : cell.textContent.trim();
+
+          if (cellIndex === 0 && value !== "") {
+            rowKey = value;
+          }
+
+          cellData.push(value);
+        });
+
+        if (cellData.length > 0) {
+          rowData.push({
+            key: rowKey,
+            values: cellData
+          });
+        }
+      });
+
+      tableData.push({
+        tableNumber: index + 1,
+        rows: rowData
+      });
+    });
+
+    const data = {
+      year,
+      month,
+      timestamp: new Date().toISOString(),
+      tables: tableData
+    };
+
+    set(ref(database, `statistics/${year}/${month}`), data)
+      .then(() => {
+        alert("Data saved successfully!");
+        window.location.href = "Emergency2.html";
+      })
+      .catch((error) => {
+        alert("Error saving data: " + error.message);
+      });calculateTotalsForTables();
+
+  }
+
+ window.loadData = function () {
+  const year = document.getElementById('yearSelect').value;
+  const month = document.getElementById('monthSelect').value;
+
+  if (year === "Year" || month === "Month") {
+    return;
+  }
+
+  const dbRef = ref(getDatabase());
+
+  get(child(dbRef, `statistics/${year}/${month}`)).then((snapshot) => {
+    const tables = document.querySelectorAll("table");
+
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      const loadedTables = data.tables || [];
+
+      tables.forEach((table, tableIndex) => {
+        const tableData = loadedTables[tableIndex];
+
+        for (let rowIndex = 0; rowIndex < table.rows.length; rowIndex++) {
+          const row = table.rows[rowIndex];
+
+          for (let cellIndex = 0; cellIndex < row.cells.length; cellIndex++) {
+            const cell = row.cells[cellIndex];
+
+            if (cell.tagName.toLowerCase() === "th") continue;
+
+            let newValue = "";
+            if (
+              tableData &&
+              tableData.rows &&
+              tableData.rows[rowIndex] &&
+              tableData.rows[rowIndex].values &&
+              typeof tableData.rows[rowIndex].values[cellIndex] !== 'undefined'
+            ) {
+              newValue = tableData.rows[rowIndex].values[cellIndex];
+            }
+
+            const input = cell.querySelector("input");
+            if (input) {
+              input.value = newValue;
+            } else {
+              cell.textContent = newValue;
+            }
+          }
+        }
+      });
+    } else {
+      tables.forEach(table => {
+        for (let i = 0; i < table.rows.length; i++) {
+          const row = table.rows[i];
+          for (let j = 0; j < row.cells.length; j++) {
+            const cell = row.cells[j];
+
+            if (cell.tagName.toLowerCase() === "th" || j === 0) continue;
+
+            const input = cell.querySelector("input");
+            if (input) {
+              input.value = "";
+            } else {
+              cell.textContent = "";
+            }
+          }
+        }
+      });
+
+      alert("لا توجد بيانات محفوظة. يمكنك كتابة البيانات الآن يدويًا.");
+    }
+  }).catch((error) => {
+    console.error("خطأ أثناء تحميل البيانات:", error);
+  });calculateTotalsForTables();
+
+}
+
+document.getElementById('yearSelect').addEventListener('change', tryLoadData);
+document.getElementById('monthSelect').addEventListener('change', tryLoadData);
+
+function tryLoadData() {
+  const year = document.getElementById('yearSelect').value;
+  const month = document.getElementById('monthSelect').value;
+  if (year !== "Year" && month !== "Month") {
+    loadData();
+  }
+}
+function calculateTotalsForTable1() {
+  const table = document.querySelectorAll("table")[0];
+  const rows = table.querySelectorAll("tr");
+
+  for (let col = 1; col < rows[1].cells.length; col++) {
+    let sum = 0;
+    for (let row = 1; row <= 5; row++) {
+      const input = rows[row].cells[col].querySelector("input");
+      const value = input ? parseFloat(input.value) : 0;
+      if (!isNaN(value)) {
+        sum += value;
+      }
+    }
+    const totalInput = rows[7]?.cells[col]?.querySelector("input");
+    if (totalInput) {
+      totalInput.value = sum > 0 ? sum : "";
+    }
+  }
+}
+
+function calculateTotalsForTable2() {
+  const table = document.querySelectorAll("table")[1];
+  const rows = table.querySelectorAll("tr");
+
+  for (let col = 1; col < rows[1].cells.length; col++) {
+    let sum = 0;
+    for (let row = 1; row <= 5; row++) {
+      const input = rows[row].cells[col].querySelector("input");
+      const value = input ? parseFloat(input.value) : 0;
+      if (!isNaN(value)) {
+        sum += value;
+      }
+    }
+    const totalInput = rows[6]?.cells[col]?.querySelector("input");
+    if (totalInput) {
+      totalInput.value = sum > 0 ? sum : "";
+    }
+  }
+}
+
+function calculateTotalsForTables() {
+  calculateTotalsForTable1();
+  calculateTotalsForTable2();
+}
+
+window.addEventListener("load", () => {
+  document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("input", calculateTotalsForTables);
+  });
+  calculateTotalsForTables();
+});
+
+
+</script>
+
+
+<body>
+
+   <div class="navbar">
+        <h2>Emergency</h2>
+        <div class="button-container">
+            <select id="yearSelect">
+                <option value="">Year</option>
+                
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="2030">2030</option>
+
+                
+            </select>
+   
+    <select id="monthSelect">
+      <option value="Month">Month</option>
+      <option value="January">January</option>
+      <option value="February">February</option>
+      <option value="March">March</option>
+      <option value="April">April</option>
+      <option value="May">May</option>
+      <option value="June">June</option>
+      <option value="July">July</option>
+      <option value="August">August</option>
+      <option value="September">September</option>
+      <option value="October">October</option>
+      <option value="November">November</option>
+      <option value="December">December</option>
+    </select>
+  </div>
+  </div>
+
+  <table>
+    <tr><td class="title" colspan="1">ED Statistics
+  </td></tr>
+    <tr>
+      <th>CTAS Level
+      </th><th>Total Patients</th><th>Total Deceased in ED
+      </th>
+      <th >Door to Doctor Time (minutes)
+      </th>
+      <th >Doctor to Decision Time (minutes)
+      </th>
+      <th >Decision to to Disposition Time (minutes)
+      </th>
+      <th>Total number of non-urgent</th>
+      <th>Total number of DAMA    </th>
+  
+     <th>Total number of LAMA</th>
+      <th>Total AICU admission </th>
+      <th>Total PICU admission</th>
+      <th>Total NICU admission</th>
+      <th>Total Ward admission    </th>
+  
+  
+  
+     <th>Total Number referred to UCC    </th>
+  
+  
+    <th>Total Number referred to another facility    </th>
+  
+  
+  <th>Total Number of discharged home    </th>
+  
+  <th>Total Patients returned to ED with in 72 hours (Same Complaints with same ICD-10 code)
+  </th>
+    </tr>
+    <script>
+      for (let i = 1; i <= 6; i++) {
+        document.write("<tr>");
+        document.write("<td>" + (i === 6 ? "Total" : i) + "</td>");
+        for (let j = 1; j <= 16; j++) {
+          document.write('<td><input type="text" /></td>');
+        }
+        document.write("</tr>");
+      }
+    </script>
+  </table>
+  
+  <table>
+    
+    <tr>
+      <th>CTAS Level
+      </th>
+      <th>Total Patients treated within 4 hours
+        1</th><th>Total patients treated between 4h and 6 h
+        </th><th>Total patients treated between 6 h and 12 h
+        </th>
+      <th>Total patients treated between 12 h and 24 h
+      </th><th>Total patients treated between 24 h and 48 h
+      </th><th>Total patients treated between 48 h and 72 h
+      </th><th>Total patients treated within >72 hours</th>
+    </tr>
+    <script>
+      for (let i = 1; i <= 6; i++) {
+        document.write("<tr>");
+        document.write("<td>" + (i === 6 ? "Total" : i) + "</td>");
+        for (let j = 1; j <= 7; j++) {
+          document.write('<td><input type="text" /></td>');
+        }
+        document.write("</tr>");
+      }
+    </script>
+  </table>
+  
+  <table>
+    <tr><td class="title" colspan="1">ED Admission
+  </td></tr>
+    <tr>
+      <th>Admission to
+      </th><th>&lt;Total admissions within 30 minutes
+      </th><th>Total admissions within 30min - 1 hour
+      </th><th>Total admissions between 1 hour -  4 hours
+      </th><th>&gt;Total admissions > 4h</th>
+    </tr>
+    <script>
+      const services = ["AICU", "PICU", "NICU", "Ward"];
+      services.forEach(service => {
+        document.write("<tr><td>" + service + "</td>");
+        for (let j = 0; j < 4; j++) {
+          document.write('<td><input type="text" /></td>');
+        }
+        document.write("</tr>");
+      });
+    </script>
+  </table>
+  
+  <table>
+    <tr><td class="title" colspan="1">Pain Killer Statistics
+    </td></tr>
+    <tr>
+      <th>Door to Pain Killer time (minutes)
+      </th><th>Number of patients with Door to Pain Killer Time <= 0:30 MIN
+      </th><th>Number of patients with Door to Pain Killer Time > 0:30 H and <= 1:00  H
+      </th>
+      <th>Number of patients with Door to Pain Killer Time > 1:00 H and <= 3:00 H</th><th>Number of patients with Door to Pain Killer Time > 3:00</th><th>Number of patients with Pethidine prescription (50 mg)
+      </th><th>Number of patients with Pethidine prescription (100 mg)</th>
+  
+      <th>Number of patients with Pethidine prescription (150 mg)</th>
+  
+    </tr>
+    <tr>
+      <td></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td>
+    </tr>
+  </table>
+  
+  <table>
+    <tr><td class="title" colspan="1">SEPSIS Statisics
+    </td></tr>
+   
+      
+      <th></th>
+      
+      <th>Compliance to 1-hour Bundle (KPI1, KPI2, KPI3, KPI4)</th><th>Door to receipt initial Lactate level result
+      </th><th>Door to Blood culture sampling
+      </th><th>Door to broad spectrum or other antibiotics administration
+      </th>
+      <th>
+        % Sepsis Moratlity
+  
+      </th>
+      
+    </tr>
+  
+  
+  
+  
+  </tr>
+  <th></th>
+      
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td><td><input type="text" /></td>
+  <td><input type="text" /></td>
+  
+      
+  
+  </tr>
+  
+  
+  
+  
+    <tr>
+      <th >Age Catigory 
+  
+      </th>
+      
+      <th>otalPatients Diagnosed with  Sepsis
+      </th>
+      <th>Total Patients Treated Within 1 Hour
+      </th>
+      <th>
+        otal Initial Lactate Level Results during 1st hour
+  
+      </th>
+      <th>
+        Total Blood Culture Samplings during 1st hour
+  
+      </th>
+      <th>
+        Total of Antibiotic Administrations during the 1st hour
+  
+      </th>
+      <th>
+        Total Sepsis Deaths
+  
+      </th>
+    </tr>
+  
+  
+  
+  
+    <tr>
+      <td>Adult
+  
+  
+      </td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+    </tr>
+  
+    <tr>
+      <td>Pediatrics
+  
+  
+  
+      </td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+    </tr>
+  
+  
+  
+  
+  </table>
+  
+  <table>
+    <tr><td class="title" colspan="1">AMI  Statisics 
+    </td></tr>
+    <tr>
+      <th>Door to ECG	
+      </th><th>Door to Needle	
+      </th><th>Door in -out within 30 min</th><th>Door to Balloon PCI (same hospital)	
+      </th><th>Door to Ballon PCI (nearby\far hospital)</th><th>% AMI Moratlity	 </th>
+    </tr>
+  
+  
+  
+  
+    <tr>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+    </tr>
+  
+  
+    <tr>
+      
+  
+    <th>Total patients diagnosed with AMI
+  
+    </th><th>Patients treated with ECG within 10 min
+      
+    </th><th>Total STEMI requiring fibrinolysis
+    </th><th>STEMI cases given Fibrinolysis within 30 min
+  
+    </th><th>Total STEMI requiring primary PCI
+    </th><th>STEMI completed Primary PCI within 90 min		 </th>
+  
+  
+    <th>STEMI Patients transferred for Primary PCI within 30 
+    </th>
+    <th>Total STEMI Patients received from other facilityies for PCI
+    </th>
+    <th>Total received STEMI completed Primary PCI within 120 min
+    </th>
+    <th>Total AMI deaths in ED	 </th>
+  
+  
+      </tr>
+
+  
+    <tr>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+      <td><input type="text" /></td><td><input type="text" /></td>
+  
+    </tr>
+  </table>
+  <button onclick="saveData()">Save</button>
+
+</body>
+</html>
